@@ -21,7 +21,10 @@
     modalAddTitle: 'ddm.modalAddTitle'|vistrans([], 'datatable'),
     modalEditTitle: 'ddm.modalEditTitle'|vistrans([], 'datatable'),
     modalDeleteTitle: 'ddm.modalDeleteTitle'|vistrans([], 'datatable'),
-    modalDeleteContent: 'ddm.modalDeleteContent'|vistrans([], 'datatable')
+    modalDeleteContent: 'ddm.modalDeleteContent'|vistrans([], 'datatable'),
+    errorDelete: 'ddm.errorDelete'|vistrans([], 'datatable'),
+    errorDeleteUnknown: 'ddm.errorDeleteUnknown'|vistrans([], 'datatable'),
+    confirmDeleteSimulation: 'ddm.confirmDeleteSimulation'|vistrans([], 'datatable')
 }|merge(options.datatable_language|default({})) %}
 <div class="card shadow">
     <div class="card-header d-flex justify-content-between align-items-center">
@@ -198,15 +201,15 @@
                                                 }
                                                 modal.close();
                                             } else {
-                                                alert('Fehler beim Löschen: ' + (data.message || 'Unbekannter Fehler'));
+                                                alert(languageSource.errorDelete.replace('{error}', (data.message || languageSource.errorDeleteUnknown)));
                                             }
                                         })
                                         .catch(error => {
                                             console.error('Error:', error);
-                                            alert('Fehler beim Löschen');
+                                            alert(languageSource.errorDelete.replace('{error}', languageSource.errorDeleteUnknown));
                                         });
                                 } else {
-                                    console.log('User ' + userId + ' gelöscht (Simulation)');
+                                    console.log(languageSource.confirmDeleteSimulation.replace('{id}', userId));
                                     modal.close();
                                 }
                             }

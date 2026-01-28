@@ -54,11 +54,11 @@ class DDMDatatableFormHandler
                 $error = null;
 
                 if (!$value) {
-                    $error = $this->translator->trans($field->getName(), [], $translationDomain) . ' ist erforderlich';
+                    $error = $this->translator->trans('ddm.fieldRequired', ['{field}' => $this->translator->trans($field->getName(), [], $translationDomain)], 'datatable');
                 } else {
                     foreach ($field->getValidators() as $validator) {
                         if (!$validator->validate($value)) {
-                            $error = $validator->getErrorMessage() ?? ($this->translator->trans($field->getName(), [], $translationDomain) . ' ist ungültig');
+                            $error = $validator->getErrorMessage() ?? $this->translator->trans('ddm.fieldInvalid', ['{field}' => $this->translator->trans($field->getName(), [], $translationDomain)], 'datatable');
                             break;
                         }
                     }
@@ -103,7 +103,7 @@ class DDMDatatableFormHandler
 
             return new JsonResponse([
                 'success' => true,
-                'debug_msg' => $isNew ? 'Erfolgreich erstellt!' : 'Erfolgreich aktualisiert!'
+                'debug_msg' => $isNew ? $this->translator->trans('ddm.successCreate', [], 'datatable') : $this->translator->trans('ddm.successUpdate', [], 'datatable')
             ]);
         }
 

@@ -3,7 +3,7 @@
         {{ include(field.template, {field: field}) }}
     {% endfor %}
 
-    <button type="submit" class="btn btn-primary d-none" id="submit-btn-hidden">Submit</button>
+    <button type="submit" class="btn btn-primary d-none" id="submit-btn-hidden">{{ options.submitLabel|default('ddm.modalSaveLabel'|vistrans([], 'datatable')) }}</button>
 </form>
 
 <script>

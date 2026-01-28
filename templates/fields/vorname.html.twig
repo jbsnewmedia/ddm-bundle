@@ -1,7 +1,7 @@
 <div class="form-group mb-3 border border-primary p-2">
-    <label class="form-label text-primary" for="{{ field.identifier }}">{{ field.name }} (Spezielles Template):</label>
+    <label class="form-label text-primary" for="{{ field.identifier }}">{{ field.name|vistrans([], options.translation_domain|default('datatable')) }} (Spezielles Template):</label>
     <input type="{{ field.type }}" name="{{ field.identifier }}" id="{{ field.identifier }}" class="form-control border-primary" value="{{ field.value }}"
     />
     <span class="invalid-feedback"></span>
-    <small class="text-muted">Dieses Feld nutzt ein eigenes Twig-Template.</small>
+    <small class="text-muted">{{ 'ddm.specialTemplateNote'|vistrans([], 'datatable') }}</small>
 </div>
