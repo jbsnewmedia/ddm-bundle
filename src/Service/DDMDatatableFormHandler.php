@@ -118,6 +118,7 @@ class DDMDatatableFormHandler
         $renderParams = array_merge($options, [
             'fields' => $fields,
             'ddm' => $ddm,
+            'options' => $options,
         ]);
 
         return new Response($this->twig->render($template, $renderParams));
