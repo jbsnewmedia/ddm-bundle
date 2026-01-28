@@ -1,4 +1,9 @@
-{% do addAssetComposer('avalynx/avalynx-datatable/dist/css/avalynx-datatable.css') %}
-{% do addAssetComposer('avalynx/avalynx-modal/dist/css/avalynx-modal.css') %}
-{% do addAssetComposer('avalynx/avalynx-datatable/dist/js/avalynx-datatable.js') %}
-{% do addAssetComposer('avalynx/avalynx-modal/dist/js/avalynx-modal.js') %}
+{% if asset is defined %}
+    {% if asset is iterable %}
+        {% for a in asset %}
+            {% do addAssetComposer(a) %}
+        {% endfor %}
+    {% else %}
+        {% do addAssetComposer(asset) %}
+    {% endif %}
+{% endif %}
