@@ -1,0 +1,28 @@
+<form id="form_validation" action="{{ options.action|default('') }}" method="POST" class="p-3">
+    {% for field in fields %}
+        {{ include(field.template, {field: field}) }}
+    {% endfor %}
+
+    <button type="submit" class="btn btn-primary d-none" id="submit-btn-hidden">Submit</button>
+</form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = new AvalynxForm('form_validation', {
+            onSuccess: (response) => {
+                if (window.parent) {
+                    window.parent.postMessage({ type: 'form-success', response: response }, '*');
+                }
+            },
+            onError: (response) => {
+                console.log('Form submission failed:', response);
+            }
+        });
+
+        window.addEventListener('message', function(event) {
+            if (event.data === 'submit-form') {
+                document.getElementById('form_validation').dispatchEvent(new Event('submit', { cancelable: true }));
+            }
+        });
+    });
+</script>

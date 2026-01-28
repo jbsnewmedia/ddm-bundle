@@ -1,0 +1,21 @@
+{
+    "name": "jbsnewmedia/ddm-bundle",
+    "description": "Data Definition Model Bundle for VIS",
+    "type": "symfony-bundle",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Juergen Schwind",
+            "email": "juergen.schwind@jbs-newmedia.de"
+        }
+    ],
+    "require": {
+        "php": ">=8.3",
+        "symfony/framework-bundle": "7.4.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "JBSNewMedia\\DDMBundle\\": "src/"
+        }
+    }
+}

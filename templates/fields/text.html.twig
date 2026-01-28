@@ -1,0 +1,6 @@
+<div class="form-group mb-3">
+    <label class="form-label" for="{{ field.identifier }}">{{ field.name|trans({}, 'vis_demo') }}:</label>
+    <input type="{{ field.type }}" name="{{ field.identifier }}" id="{{ field.identifier }}" class="form-control" value="{{ field.value }}"
+    />
+    <span class="invalid-feedback"></span>
+</div>

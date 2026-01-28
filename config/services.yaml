@@ -1,0 +1,22 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    JBSNewMedia\DDMBundle\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/DDMBundle.php'
+            - '../src/Service/DDM.php'
+            - '../src/Service/DDMField.php'
+            - '../src/DDM/'
+
+    _instanceof:
+        JBSNewMedia\DDMBundle\Service\DDMField:
+            tags: ['ddm.field']
+
+    JBSNewMedia\DDMBundle\Service\DDMFactory:
+        arguments:
+            $fields: !tagged_iterator ddm.field
