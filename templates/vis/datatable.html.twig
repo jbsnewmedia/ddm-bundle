@@ -25,7 +25,7 @@
 
     {{ include('@DDM/datatable/default.html.twig', {
         ddm: ddm,
-        options: {
+        options: ddm_options|default({
             add_url: path('vis_demo_new'),
             title: 'DDM Demo Tabelle',
             datatable_options: {
@@ -35,8 +35,8 @@
                 }
             },
             datatable_language: {
-                searchLabel: 'datatable.demo.search'|vistrans([], 'vis_demo')
+                searchLabel: 'ddm.demo.search'|vistrans([], 'vis_demo')
             }
-        }
+        })
     }) }}
 {% endblock %}

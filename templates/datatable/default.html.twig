@@ -1,4 +1,4 @@
-{% set datatable_title = options.title|default('datatable.title'|vistrans) %}
+{% set datatable_title = options.title|default('ddm.title'|vistrans([], 'datatable')) %}
 {% set datatable_options = {
     apiUrl: '',
     perPage: 10,
@@ -7,28 +7,28 @@
 }|merge(options.datatable_options|default({})) %}
 
 {% set datatable_language = {
-    showLabel: 'datatable.showLabel'|vistrans,
-    entriesLabel: 'datatable.entriesLabel'|vistrans,
-    searchLabel: 'datatable.searchLabel'|vistrans,
-    previousLabel: 'datatable.previousLabel'|vistrans,
-    nextLabel: 'datatable.nextLabel'|vistrans,
-    showingEntries: 'datatable.showingEntries'|vistrans,
-    showingFilteredEntries: 'datatable.showingFilteredEntries'|vistrans,
-    modalCancelLabel: 'datatable.modalCancelLabel'|vistrans,
-    modalSaveLabel: 'datatable.modalSaveLabel'|vistrans,
-    modalEditLabel: 'datatable.modalEditLabel'|vistrans,
-    modalDeleteLabel: 'datatable.modalDeleteLabel'|vistrans,
-    modalAddTitle: 'datatable.modalAddTitle'|vistrans,
-    modalEditTitle: 'datatable.modalEditTitle'|vistrans,
-    modalDeleteTitle: 'datatable.modalDeleteTitle'|vistrans,
-    modalDeleteContent: 'datatable.modalDeleteContent'|vistrans
+    showLabel: 'ddm.showLabel'|vistrans([], 'datatable'),
+    entriesLabel: 'ddm.entriesLabel'|vistrans([], 'datatable'),
+    searchLabel: 'ddm.searchLabel'|vistrans([], 'datatable'),
+    previousLabel: 'ddm.previousLabel'|vistrans([], 'datatable'),
+    nextLabel: 'ddm.nextLabel'|vistrans([], 'datatable'),
+    showingEntries: 'ddm.showingEntries'|vistrans([], 'datatable'),
+    showingFilteredEntries: 'ddm.showingFilteredEntries'|vistrans([], 'datatable'),
+    modalCancelLabel: 'ddm.modalCancelLabel'|vistrans([], 'datatable'),
+    modalSaveLabel: 'ddm.modalSaveLabel'|vistrans([], 'datatable'),
+    modalEditLabel: 'ddm.modalEditLabel'|vistrans([], 'datatable'),
+    modalDeleteLabel: 'ddm.modalDeleteLabel'|vistrans([], 'datatable'),
+    modalAddTitle: 'ddm.modalAddTitle'|vistrans([], 'datatable'),
+    modalEditTitle: 'ddm.modalEditTitle'|vistrans([], 'datatable'),
+    modalDeleteTitle: 'ddm.modalDeleteTitle'|vistrans([], 'datatable'),
+    modalDeleteContent: 'ddm.modalDeleteContent'|vistrans([], 'datatable')
 }|merge(options.datatable_language|default({})) %}
 <div class="card shadow">
     <div class="card-header d-flex justify-content-between align-items-center">
         <div>{{ datatable_title }}</div>
         {% if options.add_url|default(false) %}
             <button class="btn btn-sm btn-success btn-add-new-user" data-url="{{ options.add_url }}">
-                <i class="fas fa-plus"></i> {{ options.add_label|default('Hinzufügen') }}
+                <i class="fas fa-plus"></i> {{ options.add_label|default('ddm.modalAddTitle'|vistrans([], 'datatable')) }}
             </button>
         {% endif %}
     </div>
