@@ -10,6 +10,8 @@ class DDM
 {
     protected string $entityClass;
     protected string $context;
+    protected ?string $formTemplate = null;
+    protected ?string $datatableTemplate = null;
     /** @var DDMField[] */
     protected iterable $fields = [];
 
@@ -19,6 +21,35 @@ class DDM
         $this->context = $context;
         $this->fields = $fields;
         $this->loadFields();
+    }
+
+    public function getFormTemplate(): ?string
+    {
+        return $this->formTemplate;
+    }
+
+    public function setFormTemplate(?string $formTemplate): self
+    {
+        $this->formTemplate = $formTemplate;
+        return $this;
+    }
+
+    public function getDatatableTemplate(): ?string
+    {
+        return $this->datatableTemplate;
+    }
+
+    public function setDatatableTemplate(?string $datatableTemplate): self
+    {
+        $this->datatableTemplate = $datatableTemplate;
+        return $this;
+    }
+
+    public function setTemplate(?string $template): self
+    {
+        $this->formTemplate = $template;
+        $this->datatableTemplate = $template;
+        return $this;
     }
 
     protected function loadFields(): void

@@ -25,6 +25,10 @@ class DDMDatatableFormHandler
      */
     public function handle(Request $request, DDM $ddm, object $entity = null, bool $preload = false, string $template = '', array $options = []): Response
     {
+        if ($template === '') {
+            $template = $ddm->getFormTemplate() ?? '@DDM/vis/form.html.twig';
+        }
+
         if ($entity && !$preload) {
             foreach ($ddm->getFields() as $field) {
                 if ($field->getIdentifier() === 'options') {

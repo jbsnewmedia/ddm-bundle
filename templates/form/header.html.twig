@@ -1,0 +1,9 @@
+{% if asset is defined %}
+    {% if asset is iterable %}
+        {% for a in asset %}
+            {% do addAssetComposer(a) %}
+        {% endfor %}
+    {% else %}
+        {% do addAssetComposer(asset) %}
+    {% endif %}
+{% endif %}

@@ -13,7 +13,15 @@
     previousLabel: 'datatable.previousLabel'|vistrans,
     nextLabel: 'datatable.nextLabel'|vistrans,
     showingEntries: 'datatable.showingEntries'|vistrans,
-    showingFilteredEntries: 'datatable.showingFilteredEntries'|vistrans
+    showingFilteredEntries: 'datatable.showingFilteredEntries'|vistrans,
+    modalCancelLabel: 'datatable.modalCancelLabel'|vistrans,
+    modalSaveLabel: 'datatable.modalSaveLabel'|vistrans,
+    modalEditLabel: 'datatable.modalEditLabel'|vistrans,
+    modalDeleteLabel: 'datatable.modalDeleteLabel'|vistrans,
+    modalAddTitle: 'datatable.modalAddTitle'|vistrans,
+    modalEditTitle: 'datatable.modalEditTitle'|vistrans,
+    modalDeleteTitle: 'datatable.modalDeleteTitle'|vistrans,
+    modalDeleteContent: 'datatable.modalDeleteContent'|vistrans
 }|merge(options.datatable_language|default({})) %}
 <div class="card shadow">
     <div class="card-header d-flex justify-content-between align-items-center">
@@ -46,6 +54,7 @@
         height: 100%;
         border: none;
         display: block;
+        overflow: hidden;
     }
     .modal-body-content {
         padding: 1rem;
@@ -82,6 +91,12 @@
                     datatable.fetchData();
                 }
             }
+            if (event.data && event.data.type === 'form-error') {
+                const saveBtn = document.querySelector('.avalynx-modal .btn-primary');
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                }
+            }
         });
 
         document.addEventListener('click', function(e) {
@@ -90,23 +105,24 @@
                 const formUrl = btnAddNew.dataset.url;
 
                 const modal = new AvalynxModal("add-modal", {
-                    title: '{{ options.add_title|default("User hinzufügen") }}',
+                    title: languageSource.modalAddTitle,
                     body: '<iframe id="modal-iframe" src="' + formUrl + '"></iframe>',
                     bodyIsHtml: true,
                     buttons: [
                         {
-                            label: 'Abbrechen',
+                            label: languageSource.modalCancelLabel,
                             class: 'btn btn-secondary',
                             onClick: function() {
                                 modal.close();
                             }
                         },
                         {
-                            label: 'Speichern',
+                            label: languageSource.modalSaveLabel,
                             class: 'btn btn-primary',
                             onClick: function() {
                                 const iframe = document.getElementById('modal-iframe');
                                 if (iframe && iframe.contentWindow) {
+                                    this.disabled = true;
                                     iframe.contentWindow.postMessage('submit-form', '*');
                                 }
                             }
@@ -122,23 +138,24 @@
                 const formUrl = btnEdit.dataset.url;
 
                 const modal = new AvalynxModal("edit-modal", {
-                    title: 'User bearbeiten',
+                    title: languageSource.modalEditTitle,
                     body: '<iframe id="modal-iframe" src="' + formUrl + '"></iframe>',
                     bodyIsHtml: true,
                     buttons: [
                         {
-                            label: 'Abbrechen',
+                            label: languageSource.modalCancelLabel,
                             class: 'btn btn-secondary',
                             onClick: function() {
                                 modal.close();
                             }
                         },
                         {
-                            label: 'Absenden',
+                            label: languageSource.modalEditLabel,
                             class: 'btn btn-primary',
                             onClick: function() {
                                 const iframe = document.getElementById('modal-iframe');
                                 if (iframe && iframe.contentWindow) {
+                                    this.disabled = true;
                                     iframe.contentWindow.postMessage('submit-form', '*');
                                 }
                             }
@@ -154,19 +171,19 @@
                 const deleteUrl = btnDelete.dataset.url;
 
                 const modal = new AvalynxModal("delete-modal", {
-                    title: 'User löschen',
-                    body: '<div class="modal-body-content">Möchten Sie den User mit der ID ' + userId + ' wirklich löschen?</div>',
+                    title: languageSource.modalDeleteTitle,
+                    body: '<div class="modal-body-content">' + languageSource.modalDeleteContent.replace('{id}', userId) + '</div>',
                     bodyIsHtml: true,
                     buttons: [
                         {
-                            label: 'Abbrechen',
+                            label: languageSource.modalCancelLabel,
                             class: 'btn btn-secondary',
                             onClick: function() {
                                 modal.close();
                             }
                         },
                         {
-                            label: 'Löschen',
+                            label: languageSource.modalDeleteLabel,
                             class: 'btn btn-danger',
                             onClick: function() {
                                 if (deleteUrl) {
