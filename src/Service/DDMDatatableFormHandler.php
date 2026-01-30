@@ -31,7 +31,7 @@ class DDMDatatableFormHandler
 
         if ($entity && !$preload) {
             foreach ($ddm->getFields() as $field) {
-                if ($field->getIdentifier() === 'options') {
+                if (!$field->isRenderInForm()) {
                     continue;
                 }
                 $method = 'get' . ucfirst($field->getIdentifier());
@@ -47,7 +47,7 @@ class DDMDatatableFormHandler
             $translationDomain = $options['translation_domain'] ?? null;
 
             foreach ($ddm->getFields() as $field) {
-                if ($field->getIdentifier() === 'options') {
+                if (!$field->isRenderInForm()) {
                     continue;
                 }
                 $value = $request->request->get($field->getIdentifier());
@@ -87,7 +87,7 @@ class DDMDatatableFormHandler
             }
 
             foreach ($ddm->getFields() as $field) {
-                if ($field->getIdentifier() === 'options') {
+                if (!$field->isRenderInForm()) {
                     continue;
                 }
                 $method = 'set' . ucfirst($field->getIdentifier());
@@ -109,7 +109,7 @@ class DDMDatatableFormHandler
 
         $fields = [];
         foreach ($ddm->getFields() as $field) {
-            if ($field->getIdentifier() === 'options') {
+            if (!$field->isRenderInForm()) {
                 continue;
             }
             $fields[] = $field;

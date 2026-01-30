@@ -18,7 +18,8 @@ abstract class DDMField
     protected bool $livesearch = true;
     protected bool $extendsearch = true;
     protected bool $sortable = true;
-    protected bool $renderable = true;
+    protected bool $renderInForm = true;
+    protected bool $renderInTable = true;
     protected string $template = '@DDM/fields/text.html.twig';
     /** @var DDMValidator[] */
     protected array $validators = [];
@@ -133,14 +134,25 @@ abstract class DDMField
         return $this;
     }
 
-    public function isRenderable(): bool
+    public function isRenderInForm(): bool
     {
-        return $this->renderable;
+        return $this->renderInForm;
     }
 
-    public function setRenderable(bool $renderable): self
+    public function setRenderInForm(bool $renderInForm): self
     {
-        $this->renderable = $renderable;
+        $this->renderInForm = $renderInForm;
+        return $this;
+    }
+
+    public function isRenderInTable(): bool
+    {
+        return $this->renderInTable;
+    }
+
+    public function setRenderInTable(bool $renderInTable): self
+    {
+        $this->renderInTable = $renderInTable;
         return $this;
     }
 

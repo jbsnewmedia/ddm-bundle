@@ -38,7 +38,7 @@ class DDMDatatableEngine
         $result['head'] = [];
         $result['head']['columns'] = [];
         foreach ($fields as $field) {
-            if (!$field->isRenderable()) {
+            if (!$field->isRenderInTable()) {
                 continue;
             }
             $column = [
@@ -125,7 +125,7 @@ class DDMDatatableEngine
         foreach ($entities as $entity) {
             $row = [];
             foreach ($fields as $field) {
-                if (!$field->isRenderable()) {
+                if (!$field->isRenderInTable()) {
                     continue;
                 }
                 $row[$field->getIdentifier()] = $field->render($entity);
