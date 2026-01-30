@@ -38,6 +38,9 @@ class DDMDatatableEngine
         $result['head'] = [];
         $result['head']['columns'] = [];
         foreach ($fields as $field) {
+            if (!$field->isRenderable()) {
+                continue;
+            }
             $column = [
                 'name' => $this->translator->trans($field->getName(), [], $translationDomain),
                 'sortable' => $field->isSortable(),
@@ -122,16 +125,10 @@ class DDMDatatableEngine
         foreach ($entities as $entity) {
             $row = [];
             foreach ($fields as $field) {
-                if ($field->getIdentifier() === 'options' && method_exists($field, 'render')) {
-                    $row[$field->getIdentifier()] = $field->render($entity);
+                if (!$field->isRenderable()) {
                     continue;
                 }
-                $method = 'get' . ucfirst($field->getIdentifier());
-                if (method_exists($entity, $method)) {
-                    $row[$field->getIdentifier()] = $entity->$method();
-                } else {
-                    $row[$field->getIdentifier()] = 'N/A';
-                }
+                $row[$field->getIdentifier()] = $field->render($entity);
             }
             $result['data'][] = ['data' => $row, 'config' => [], 'class' => '', 'data_class' => []];
         }

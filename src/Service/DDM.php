@@ -76,6 +76,10 @@ class DDM
             return $a->getOrder() <=> $b->getOrder();
         });
 
+        foreach ($collectedFields as $field) {
+            $field->init($collectedFields);
+        }
+
         $this->fields = $collectedFields;
     }
 
