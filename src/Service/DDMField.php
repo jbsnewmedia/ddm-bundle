@@ -18,10 +18,14 @@ abstract class DDMField
     protected bool $livesearch = true;
     protected bool $extendsearch = true;
     protected bool $sortable = true;
+    protected bool $renderInForm = true;
+    protected bool $renderInTable = true;
     protected string $template = '@DDM/fields/text.html.twig';
     /** @var DDMValidator[] */
     protected array $validators = [];
     protected array $errors = [];
+    /** @var DDMField[] */
+    protected array $subFields = [];
 
     public function getIdentifier(): string
     {
@@ -31,6 +35,25 @@ abstract class DDMField
     public function setIdentifier(string $identifier): self
     {
         $this->identifier = $identifier;
+        return $this;
+    }
+
+    /** @return DDMField[] */
+    public function getSubFields(): array
+    {
+        return $this->subFields;
+    }
+
+    /** @param DDMField[] $subFields */
+    public function setSubFields(array $subFields): self
+    {
+        $this->subFields = $subFields;
+        return $this;
+    }
+
+    public function addSubField(DDMField $subField): self
+    {
+        $this->subFields[] = $subField;
         return $this;
     }
 
@@ -111,6 +134,28 @@ abstract class DDMField
         return $this;
     }
 
+    public function isRenderInForm(): bool
+    {
+        return $this->renderInForm;
+    }
+
+    public function setRenderInForm(bool $renderInForm): self
+    {
+        $this->renderInForm = $renderInForm;
+        return $this;
+    }
+
+    public function isRenderInTable(): bool
+    {
+        return $this->renderInTable;
+    }
+
+    public function setRenderInTable(bool $renderInTable): self
+    {
+        $this->renderInTable = $renderInTable;
+        return $this;
+    }
+
     public function getTemplate(): string
     {
         return $this->template;
@@ -178,5 +223,26 @@ abstract class DDMField
     public function getError(): ?string
     {
         return $this->errors[0] ?? null;
+    }
+
+    public function render(object $entity): string|array
+    {
+        if ($this->value !== null) {
+            return $this->value;
+        }
+
+        $method = 'get' . ucfirst($this->identifier);
+        if (method_exists($entity, $method)) {
+            return (string) $entity->$method();
+        }
+
+        return '';
+    }
+
+    /**
+     * @param iterable<DDMField> $allFields
+     */
+    public function init(iterable $allFields): void
+    {
     }
 }

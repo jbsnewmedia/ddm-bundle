@@ -1,0 +1,42 @@
+{% extends '@Vis/tool/base.html.twig' %}
+
+{% block javascripts %}
+    {{ include('@DDM/datatable/header.html.twig', {
+    asset: [
+        'avalynx/avalynx-datatable/dist/js/avalynx-datatable.js',
+        'avalynx/avalynx-modal/dist/js/avalynx-modal.js'
+    ]}) }}
+
+    {{ parent() }}
+{% endblock %}
+
+{% block stylesheets %}
+    {{ include('@DDM/datatable/header.html.twig', {
+    asset: [
+        'avalynx/avalynx-datatable/dist/css/avalynx-datatable.css',
+        'avalynx/avalynx-modal/dist/css/avalynx-modal.css'
+    ]}) }}
+
+    {{ parent() }}
+{% endblock %}
+
+{% block vis_container %}
+    {{ parent() }}
+
+    {{ include('@DDM/datatable/default.html.twig', {
+        ddm: ddm,
+        options: ddm_options|default({
+            add_url: path('vis_demo_new'),
+            title: 'DDM Demo Tabelle',
+            datatable_options: {
+                apiUrl: path('vis_demo_ddm_api'),
+                sorting: {
+                    nachname: 'asc'
+                }
+            },
+            datatable_language: {
+                searchLabel: 'ddm.demo.search'|vistrans([], 'vis_demo')
+            }
+        })
+    }) }}
+{% endblock %}

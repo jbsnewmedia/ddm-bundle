@@ -1,4 +1,4 @@
-{% set datatable_title = options.title|default('datatable.title'|vistrans) %}
+{% set datatable_title = options.title|default('ddm.title'|vistrans([], 'datatable')) %}
 {% set datatable_options = {
     apiUrl: '',
     perPage: 10,
@@ -7,20 +7,31 @@
 }|merge(options.datatable_options|default({})) %}
 
 {% set datatable_language = {
-    showLabel: 'datatable.showLabel'|vistrans,
-    entriesLabel: 'datatable.entriesLabel'|vistrans,
-    searchLabel: 'datatable.searchLabel'|vistrans,
-    previousLabel: 'datatable.previousLabel'|vistrans,
-    nextLabel: 'datatable.nextLabel'|vistrans,
-    showingEntries: 'datatable.showingEntries'|vistrans,
-    showingFilteredEntries: 'datatable.showingFilteredEntries'|vistrans
+    showLabel: 'ddm.showLabel'|vistrans([], 'datatable'),
+    entriesLabel: 'ddm.entriesLabel'|vistrans([], 'datatable'),
+    searchLabel: 'ddm.searchLabel'|vistrans([], 'datatable'),
+    previousLabel: 'ddm.previousLabel'|vistrans([], 'datatable'),
+    nextLabel: 'ddm.nextLabel'|vistrans([], 'datatable'),
+    showingEntries: 'ddm.showingEntries'|vistrans([], 'datatable'),
+    showingFilteredEntries: 'ddm.showingFilteredEntries'|vistrans([], 'datatable'),
+    modalCancelLabel: 'ddm.modalCancelLabel'|vistrans([], 'datatable'),
+    modalSaveLabel: 'ddm.modalSaveLabel'|vistrans([], 'datatable'),
+    modalEditLabel: 'ddm.modalEditLabel'|vistrans([], 'datatable'),
+    modalDeleteLabel: 'ddm.modalDeleteLabel'|vistrans([], 'datatable'),
+    modalAddTitle: 'ddm.modalAddTitle'|vistrans([], 'datatable'),
+    modalEditTitle: 'ddm.modalEditTitle'|vistrans([], 'datatable'),
+    modalDeleteTitle: 'ddm.modalDeleteTitle'|vistrans([], 'datatable'),
+    modalDeleteContent: 'ddm.modalDeleteContent'|vistrans([], 'datatable'),
+    errorDelete: 'ddm.errorDelete'|vistrans([], 'datatable'),
+    errorDeleteUnknown: 'ddm.errorDeleteUnknown'|vistrans([], 'datatable'),
+    confirmDeleteSimulation: 'ddm.confirmDeleteSimulation'|vistrans([], 'datatable')
 }|merge(options.datatable_language|default({})) %}
 <div class="card shadow">
     <div class="card-header d-flex justify-content-between align-items-center">
         <div>{{ datatable_title }}</div>
         {% if options.add_url|default(false) %}
             <button class="btn btn-sm btn-success btn-add-new-user" data-url="{{ options.add_url }}">
-                <i class="fas fa-plus"></i> {{ options.add_label|default('Hinzufügen') }}
+                <i class="fas fa-plus"></i> {{ options.add_label|default('ddm.modalAddTitle'|vistrans([], 'datatable')) }}
             </button>
         {% endif %}
     </div>
@@ -46,6 +57,7 @@
         height: 100%;
         border: none;
         display: block;
+        overflow: hidden;
     }
     .modal-body-content {
         padding: 1rem;
@@ -66,20 +78,37 @@
             showingFilteredEntries: (start, end, filtered, total) => languageSource.showingFilteredEntries.replace('{start}', start).replace('{end}', end).replace('{filtered}', filtered).replace('{total}', total)
         };
 
-        new AvalynxDataTable("avalynx-datatable", options, language);
+        const avalynxDatatable = new AvalynxDataTable("avalynx-datatable", options, language);
+
+        let editModal = null;
+        let addModal = null;
 
         window.addEventListener('message', function(event) {
             if (event.data && event.data.type === 'form-success') {
                 // Close all modals
-                const editModal = AvalynxModal.getInstance("edit-modal");
                 if (editModal) editModal.close();
-                const addModal = AvalynxModal.getInstance("add-modal");
                 if (addModal) addModal.close();
 
                 // Refresh datatable
-                const datatable = AvalynxDataTable.getInstance("avalynx-datatable");
-                if (datatable) {
-                    datatable.fetchData();
+                if (avalynxDatatable) {
+                    avalynxDatatable.fetchData();
+                }
+
+                if (event.data.response && (event.data.response.message || event.data.response.debug_msg)) {
+                    new AvalynxAlert(
+                        event.data.response.message || event.data.response.debug_msg,
+                        "success",
+                        {
+                            "duration": 5000,
+                            "position": "bottom-right",
+                        }
+                    );
+                }
+            }
+            if (event.data && event.data.type === 'form-error') {
+                const saveBtn = document.querySelector('.avalynx-modal .btn-primary');
+                if (saveBtn) {
+                    saveBtn.disabled = false;
                 }
             }
         });
@@ -89,31 +118,32 @@
             if (btnAddNew) {
                 const formUrl = btnAddNew.dataset.url;
 
-                const modal = new AvalynxModal("add-modal", {
-                    title: '{{ options.add_title|default("User hinzufügen") }}',
+                addModal = new AvalynxModal("add-modal", {
+                    title: languageSource.modalAddTitle,
                     body: '<iframe id="modal-iframe" src="' + formUrl + '"></iframe>',
                     bodyIsHtml: true,
                     buttons: [
                         {
-                            label: 'Abbrechen',
+                            label: languageSource.modalCancelLabel,
                             class: 'btn btn-secondary',
                             onClick: function() {
-                                modal.close();
+                                addModal.close();
                             }
                         },
                         {
-                            label: 'Speichern',
+                            label: languageSource.modalSaveLabel,
                             class: 'btn btn-primary',
                             onClick: function() {
                                 const iframe = document.getElementById('modal-iframe');
                                 if (iframe && iframe.contentWindow) {
+                                    this.disabled = true;
                                     iframe.contentWindow.postMessage('submit-form', '*');
                                 }
                             }
                         }
                     ]
                 });
-                modal.open();
+                addModal.open();
             }
 
             const btnEdit = e.target.closest('.btn-edit-user');
@@ -121,31 +151,32 @@
                 const userId = btnEdit.dataset.id;
                 const formUrl = btnEdit.dataset.url;
 
-                const modal = new AvalynxModal("edit-modal", {
-                    title: 'User bearbeiten',
+                editModal = new AvalynxModal("edit-modal", {
+                    title: languageSource.modalEditTitle,
                     body: '<iframe id="modal-iframe" src="' + formUrl + '"></iframe>',
                     bodyIsHtml: true,
                     buttons: [
                         {
-                            label: 'Abbrechen',
+                            label: languageSource.modalCancelLabel,
                             class: 'btn btn-secondary',
                             onClick: function() {
-                                modal.close();
+                                editModal.close();
                             }
                         },
                         {
-                            label: 'Absenden',
+                            label: languageSource.modalEditLabel,
                             class: 'btn btn-primary',
                             onClick: function() {
                                 const iframe = document.getElementById('modal-iframe');
                                 if (iframe && iframe.contentWindow) {
+                                    this.disabled = true;
                                     iframe.contentWindow.postMessage('submit-form', '*');
                                 }
                             }
                         }
                     ]
                 });
-                modal.open();
+                editModal.open();
             }
 
             const btnDelete = e.target.closest('.btn-delete-user');
@@ -154,19 +185,19 @@
                 const deleteUrl = btnDelete.dataset.url;
 
                 const modal = new AvalynxModal("delete-modal", {
-                    title: 'User löschen',
-                    body: '<div class="modal-body-content">Möchten Sie den User mit der ID ' + userId + ' wirklich löschen?</div>',
+                    title: languageSource.modalDeleteTitle,
+                    body: '<div class="modal-body-content">' + languageSource.modalDeleteContent.replace('{id}', userId) + '</div>',
                     bodyIsHtml: true,
                     buttons: [
                         {
-                            label: 'Abbrechen',
+                            label: languageSource.modalCancelLabel,
                             class: 'btn btn-secondary',
                             onClick: function() {
                                 modal.close();
                             }
                         },
                         {
-                            label: 'Löschen',
+                            label: languageSource.modalDeleteLabel,
                             class: 'btn btn-danger',
                             onClick: function() {
                                 if (deleteUrl) {
@@ -175,21 +206,19 @@
                                         .then(data => {
                                             if (data.success) {
                                                 // Refresh datatable
-                                                const datatable = AvalynxDataTable.getInstance("avalynx-datatable");
-                                                if (datatable) {
-                                                    datatable.fetchData();
+                                                if (avalynxDatatable) {
+                                                    avalynxDatatable.fetchData();
                                                 }
                                                 modal.close();
                                             } else {
-                                                alert('Fehler beim Löschen: ' + (data.message || 'Unbekannter Fehler'));
+                                                console.error('Delete failed:', data.message);
                                             }
                                         })
                                         .catch(error => {
                                             console.error('Error:', error);
-                                            alert('Fehler beim Löschen');
                                         });
                                 } else {
-                                    console.log('User ' + userId + ' gelöscht (Simulation)');
+                                    console.log(languageSource.confirmDeleteSimulation.replace('{id}', userId));
                                     modal.close();
                                 }
                             }

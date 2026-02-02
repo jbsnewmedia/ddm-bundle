@@ -22,12 +22,17 @@ class DDMDatatableFormHandler
 
     /**
      * @param array<string, mixed> $options
+     * @return Response|array<string, mixed>
      */
-    public function handle(Request $request, DDM $ddm, object $entity = null, bool $preload = false, string $template = '', array $options = []): Response
+    public function handle(Request $request, DDM $ddm, object $entity = null, bool $preload = false, string $template = '', array $options = []): Response|array
     {
+        if ($template === '') {
+            $template = $ddm->getFormTemplate() ?? '@DDM/vis/form.html.twig';
+        }
+
         if ($entity && !$preload) {
             foreach ($ddm->getFields() as $field) {
-                if ($field->getIdentifier() === 'options') {
+                if (!$field->isRenderInForm()) {
                     continue;
                 }
                 $method = 'get' . ucfirst($field->getIdentifier());
@@ -43,18 +48,18 @@ class DDMDatatableFormHandler
             $translationDomain = $options['translation_domain'] ?? null;
 
             foreach ($ddm->getFields() as $field) {
-                if ($field->getIdentifier() === 'options') {
+                if (!$field->isRenderInForm()) {
                     continue;
                 }
                 $value = $request->request->get($field->getIdentifier());
                 $error = null;
 
                 if (!$value) {
-                    $error = $this->translator->trans($field->getName(), [], $translationDomain) . ' ist erforderlich';
+                    $error = $this->translator->trans('ddm.fieldRequired', ['{field}' => $this->translator->trans($field->getName(), [], $translationDomain)], 'datatable');
                 } else {
                     foreach ($field->getValidators() as $validator) {
                         if (!$validator->validate($value)) {
-                            $error = $validator->getErrorMessage() ?? ($this->translator->trans($field->getName(), [], $translationDomain) . ' ist ungültig');
+                            $error = $validator->getErrorMessage() ?? $this->translator->trans('ddm.fieldInvalid', ['{field}' => $this->translator->trans($field->getName(), [], $translationDomain)], 'datatable');
                             break;
                         }
                     }
@@ -83,7 +88,7 @@ class DDMDatatableFormHandler
             }
 
             foreach ($ddm->getFields() as $field) {
-                if ($field->getIdentifier() === 'options') {
+                if (!$field->isRenderInForm()) {
                     continue;
                 }
                 $method = 'set' . ucfirst($field->getIdentifier());
@@ -92,20 +97,17 @@ class DDMDatatableFormHandler
                 }
             }
 
-            if ($isNew) {
-                $this->entityManager->persist($entity);
-            }
-            $this->entityManager->flush();
-
-            return new JsonResponse([
+            return [
                 'success' => true,
-                'debug_msg' => $isNew ? 'Erfolgreich erstellt!' : 'Erfolgreich aktualisiert!'
-            ]);
+                'isNew' => $isNew,
+                'entity' => $entity,
+                'message' => $isNew ? $this->translator->trans('ddm.successCreate', [], 'datatable') : $this->translator->trans('ddm.successUpdate', [], 'datatable')
+            ];
         }
 
         $fields = [];
         foreach ($ddm->getFields() as $field) {
-            if ($field->getIdentifier() === 'options') {
+            if (!$field->isRenderInForm()) {
                 continue;
             }
             $fields[] = $field;
@@ -114,6 +116,7 @@ class DDMDatatableFormHandler
         $renderParams = array_merge($options, [
             'fields' => $fields,
             'ddm' => $ddm,
+            'options' => $options,
         ]);
 
         return new Response($this->twig->render($template, $renderParams));

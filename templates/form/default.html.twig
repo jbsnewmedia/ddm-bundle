@@ -1,9 +1,9 @@
 <form id="form_validation" action="{{ options.action|default('') }}" method="POST" class="p-3">
     {% for field in fields %}
-        {{ include(field.template, {field: field}) }}
+        {{ include(field.template, {field: field, options: options}) }}
     {% endfor %}
 
-    <button type="submit" class="btn btn-primary d-none" id="submit-btn-hidden">Submit</button>
+    <button type="submit" class="btn btn-primary d-none" id="submit-btn-hidden">{{ options.submitLabel|default('ddm.modalSaveLabel'|vistrans([], 'datatable')) }}</button>
 </form>
 
 <script>
@@ -16,6 +16,9 @@
             },
             onError: (response) => {
                 console.log('Form submission failed:', response);
+                if (window.parent) {
+                    window.parent.postMessage({ type: 'form-error', response: response }, '*');
+                }
             }
         });
 
