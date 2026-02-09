@@ -3,7 +3,7 @@
 This document provides essential information for AI and developers working on the DDMBundle project.
 
 ## Project Context
-DDMBundle is a Symfony bundle for building administration interfaces. It features a plugin architecture, user/role management, and dynamic UI components.
+DDMBundle is a Symfony bundle that provides a Data Definition Model (DDM) engine. It is used to define and process data structures for datatables and forms in the VIS environment. Key features include a flexible field system, validators, and an engine for table rendering.
 
 ## Development Commands
 All commands should be executed within the Docker container.
