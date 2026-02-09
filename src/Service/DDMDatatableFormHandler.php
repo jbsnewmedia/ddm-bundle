@@ -36,9 +36,12 @@ class DDMDatatableFormHandler
                 if (!$field->isRenderInForm()) {
                     continue;
                 }
-                $method = 'get'.ucfirst((string) $field->getIdentifier());
+                $method = 'get'.((string) $field->getIdentifier());
                 if (method_exists($entity, $method)) {
-                    $field->setValue((string) $entity->$method());
+                    $value = $entity->$method();
+                    if (is_scalar($value) || (is_object($value) && method_exists($value, '__toString'))) {
+                        $field->setValue((string) $value);
+                    }
                 }
             }
         }
@@ -56,11 +59,11 @@ class DDMDatatableFormHandler
                 $error = null;
 
                 if (!$value) {
-                    $error = $this->translator->trans('ddm.fieldRequired', ['{field}' => $this->translator->trans($field->getName(), [], $translationDomain)], 'datatable');
+                    $error = $this->translator->trans('ddm.fieldRequired', ['{field}' => $this->translator->trans($field->getName(), [], is_string($translationDomain) ? $translationDomain : null)], 'datatable');
                 } else {
                     foreach ($field->getValidators() as $validator) {
                         if (!$validator->validate($value)) {
-                            $error = $validator->getErrorMessage() ?? $this->translator->trans('ddm.fieldInvalid', ['{field}' => $this->translator->trans($field->getName(), [], $translationDomain)], 'datatable');
+                            $error = $validator->getErrorMessage() ?? $this->translator->trans('ddm.fieldInvalid', ['{field}' => $this->translator->trans($field->getName(), [], is_string($translationDomain) ? $translationDomain : null)], 'datatable');
                             break;
                         }
                     }
@@ -92,7 +95,7 @@ class DDMDatatableFormHandler
                 if (!$field->isRenderInForm()) {
                     continue;
                 }
-                $method = 'set'.ucfirst((string) $field->getIdentifier());
+                $method = 'set'.((string) $field->getIdentifier());
                 if (method_exists($entity, $method)) {
                     $entity->$method($request->request->get($field->getIdentifier()));
                 }
@@ -120,6 +123,8 @@ class DDMDatatableFormHandler
             'options' => $options,
         ]);
 
-        return new Response($this->twig->render($template, $renderParams));
+        $content = $this->twig->render($template, $renderParams);
+
+        return new Response($content);
     }
 }
