@@ -11,8 +11,8 @@ class DDM
     protected ?string $formTemplate = null;
     protected ?string $datatableTemplate = null;
 
-    public function __construct(protected string $entityClass, protected string $context, /** @var DDMField[] */
-        protected iterable $fields)
+    /** @param iterable<DDMField> $fields */
+    public function __construct(protected string $entityClass, protected string $context, protected iterable $fields)
     {
         $this->loadFields();
     }
@@ -58,7 +58,10 @@ class DDM
             foreach ($attributes as $attribute) {
                 /** @var DDMFieldAttribute $ddmFieldAttribute */
                 $ddmFieldAttribute = $attribute->newInstance();
-                $entityMatches = $ddmFieldAttribute->entity === $this->entityClass || ($ddmFieldAttribute->entity && strtolower((string) $ddmFieldAttribute->entity) === strtolower((new \ReflectionClass($this->entityClass))->getShortName()));
+
+                /** @var class-string $entityClass */
+                $entityClass = $this->entityClass;
+                $entityMatches = $ddmFieldAttribute->entity === $entityClass || ($ddmFieldAttribute->entity && strtolower((string) $ddmFieldAttribute->entity) === strtolower((new \ReflectionClass($entityClass))->getShortName()));
                 $contextMatches = $ddmFieldAttribute->identifier === $this->context || $ddmFieldAttribute->entity === $this->context;
 
                 if ($entityMatches || $contextMatches) {
@@ -80,14 +83,17 @@ class DDM
 
     public function addField(DDMField $field): self
     {
-        $this->fields[] = $field;
+        if (is_array($this->fields)) {
+            $this->fields[] = $field;
+        }
 
         return $this;
     }
 
+    /** @return DDMField[] */
     public function getFields(): array
     {
-        return $this->fields;
+        return is_array($this->fields) ? $this->fields : iterator_to_array($this->fields);
     }
 
     public function getEntityClass(): string
