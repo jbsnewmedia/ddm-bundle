@@ -22,6 +22,7 @@ class DDMDatatableEngine
     {
         $fields = $ddm->getFields();
         $entityClass = $ddm->getEntityClass();
+        /** @var class-string<object> $entityClass */
         $repository = $this->entityManager->getRepository($entityClass);
         $alias = 'p'; // Default alias, should probably be more dynamic or passed in
 
@@ -55,9 +56,12 @@ class DDMDatatableEngine
 
         $params = $request->isMethod('POST') ? $request->request : $request->query;
 
+        $result['search'] = ['value' => ''];
         if ($params->has('sorting')) {
-            $result['sorting'] = json_decode((string) $params->get('sorting'), true);
-            if (null === $result['sorting'] || false === $result['sorting']) {
+            $sorting = json_decode((string) $params->get('sorting'), true);
+            if (is_array($sorting)) {
+                $result['sorting'] = $sorting;
+            } else {
                 $result['sorting'] = [];
             }
         } else {
@@ -65,9 +69,7 @@ class DDMDatatableEngine
         }
 
         if ($params->has('search')) {
-            $result['search']['value'] = $params->get('search');
-        } else {
-            $result['search'] = ['value' => ''];
+            $result['search']['value'] = (string) $params->get('search');
         }
 
         $result['page'] = $params->getInt('page', 1);
@@ -95,6 +97,7 @@ class DDMDatatableEngine
         // Count filtered
         $countQb = clone $qb;
         $rootId = 'id'; // Default root id field
+        /** @var class-string<object> $entityClass */
         $classMetadata = $this->entityManager->getClassMetadata($entityClass);
         $identifier = $classMetadata->getIdentifierFieldNames();
         if (count($identifier) > 0) {
@@ -106,7 +109,9 @@ class DDMDatatableEngine
 
         // Sorting
         foreach ($result['sorting'] as $key => $sort) {
-            $qb->addOrderBy($alias.'.'.$key, $sort);
+            if (is_string($key) && is_string($sort)) {
+                $qb->addOrderBy($alias.'.'.$key, $sort);
+            }
         }
 
         // Pagination
@@ -120,9 +125,15 @@ class DDMDatatableEngine
             ->setMaxResults($result['perpage']);
 
         $entities = $qb->getQuery()->getResult();
+        if (!is_iterable($entities)) {
+            $entities = [];
+        }
 
         $result['data'] = [];
         foreach ($entities as $entity) {
+            if (!is_object($entity)) {
+                continue;
+            }
             $row = [];
             foreach ($fields as $field) {
                 if (!$field->isRenderInTable()) {
