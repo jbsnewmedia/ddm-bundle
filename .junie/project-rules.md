@@ -30,13 +30,11 @@ All commands should be executed within the Docker container.
 ## Project Structure Highlights
 - `.developer/`: Additional development documentation.
 - `.junie/`: AI-specific configuration and documentation.
-- `src/Core`: Core services such as the `PluginService`.
-- `src/Command`: CLI tools for project initialization and management.
-- `src/Plugin`: Base classes and interfaces for the plugin system (`AbstractPlugin`).
-- `src/Entity`: Doctrine entities for users, roles, and other persistent data.
-- `src/Model`: UI models for sidebar, topbar, and other components.
-- `src/Resources`: Contains skeletons for code generation, among other things.
-- `src/DependencyInjection`: Configuration of bundle extensions and compiler passes.
+- `src/Attribute`: Contains PHP attributes for defining fields (`DDMFieldAttribute`).
+- `src/DependencyInjection`: Configuration of bundle extensions (`DDMExtension`) and definition of the configuration (`Configuration`).
+- `src/Service`: Core services such as `DDMFactory`, `DDMDatatableEngine`, and management of `DDMField` objects.
+- `src/Validator`: Implements specific validation logic for DDM fields (e.g., `DDMStringValidator`, `DDMRequiredValidator`).
+- `templates/`: Contains Twig templates for rendering datatables and form fields.
 - `tests/`: Comprehensive test suite for core and plugin functionalities.
 
 
