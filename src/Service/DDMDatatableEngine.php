@@ -14,7 +14,7 @@ class DDMDatatableEngine
 {
     public function __construct(
         protected TranslatorInterface $translator,
-        protected EntityManagerInterface $entityManager
+        protected EntityManagerInterface $entityManager,
     ) {
     }
 
@@ -44,9 +44,9 @@ class DDMDatatableEngine
             $column = [
                 'name' => $this->translator->trans($field->getName(), [], $translationDomain),
                 'sortable' => $field->isSortable(),
-                'id' => $field->getIdentifier()
+                'id' => $field->getIdentifier(),
             ];
-            if ($field->getIdentifier() === 'options') {
+            if ('options' === $field->getIdentifier()) {
                 $column['raw'] = true;
                 $column['class'] = 'avalynx-datatable-options';
             }
@@ -82,13 +82,13 @@ class DDMDatatableEngine
         if ('' !== $result['search']['value']) {
             $orX = $qb->expr()->orX();
             foreach ($fields as $field) {
-                if ($field->isLivesearch() && $field->getIdentifier() !== 'options') {
-                    $orX->add($qb->expr()->like($alias . '.' . $field->getIdentifier(), ':search'));
+                if ($field->isLivesearch() && 'options' !== $field->getIdentifier()) {
+                    $orX->add($qb->expr()->like($alias.'.'.$field->getIdentifier(), ':search'));
                 }
             }
             if ($orX->count() > 0) {
                 $qb->andWhere($orX)
-                    ->setParameter('search', '%' . $result['search']['value'] . '%');
+                    ->setParameter('search', '%'.$result['search']['value'].'%');
             }
         }
 
@@ -101,12 +101,12 @@ class DDMDatatableEngine
             $rootId = $identifier[0];
         }
 
-        $totalFiltered = (int) $countQb->select('count(' . $alias . '.' . $rootId . ')')->getQuery()->getSingleScalarResult();
-        $total = (int) $repository->createQueryBuilder($alias)->select('count(' . $alias . '.' . $rootId . ')')->getQuery()->getSingleScalarResult();
+        $totalFiltered = (int) $countQb->select('count('.$alias.'.'.$rootId.')')->getQuery()->getSingleScalarResult();
+        $total = (int) $repository->createQueryBuilder($alias)->select('count('.$alias.'.'.$rootId.')')->getQuery()->getSingleScalarResult();
 
         // Sorting
         foreach ($result['sorting'] as $key => $sort) {
-            $qb->addOrderBy($alias . '.' . $key, $sort);
+            $qb->addOrderBy($alias.'.'.$key, $sort);
         }
 
         // Pagination

@@ -8,18 +8,12 @@ use JBSNewMedia\DDMBundle\Attribute\DDMFieldAttribute;
 
 class DDM
 {
-    protected string $entityClass;
-    protected string $context;
     protected ?string $formTemplate = null;
     protected ?string $datatableTemplate = null;
-    /** @var DDMField[] */
-    protected iterable $fields = [];
 
-    public function __construct(string $entityClass, string $context, iterable $fields)
+    public function __construct(protected string $entityClass, protected string $context, /** @var DDMField[] */
+        protected iterable $fields)
     {
-        $this->entityClass = $entityClass;
-        $this->context = $context;
-        $this->fields = $fields;
         $this->loadFields();
     }
 
@@ -31,6 +25,7 @@ class DDM
     public function setFormTemplate(?string $formTemplate): self
     {
         $this->formTemplate = $formTemplate;
+
         return $this;
     }
 
@@ -42,6 +37,7 @@ class DDM
     public function setDatatableTemplate(?string $datatableTemplate): self
     {
         $this->datatableTemplate = $datatableTemplate;
+
         return $this;
     }
 
@@ -49,6 +45,7 @@ class DDM
     {
         $this->formTemplate = $template;
         $this->datatableTemplate = $template;
+
         return $this;
     }
 
@@ -61,7 +58,7 @@ class DDM
             foreach ($attributes as $attribute) {
                 /** @var DDMFieldAttribute $ddmFieldAttribute */
                 $ddmFieldAttribute = $attribute->newInstance();
-                $entityMatches = $ddmFieldAttribute->entity === $this->entityClass || ($ddmFieldAttribute->entity && strtolower($ddmFieldAttribute->entity) === strtolower((new \ReflectionClass($this->entityClass))->getShortName()));
+                $entityMatches = $ddmFieldAttribute->entity === $this->entityClass || ($ddmFieldAttribute->entity && strtolower((string) $ddmFieldAttribute->entity) === strtolower((new \ReflectionClass($this->entityClass))->getShortName()));
                 $contextMatches = $ddmFieldAttribute->identifier === $this->context || $ddmFieldAttribute->entity === $this->context;
 
                 if ($entityMatches || $contextMatches) {
@@ -72,9 +69,7 @@ class DDM
             }
         }
 
-        usort($collectedFields, function (DDMField $a, DDMField $b) {
-            return $a->getOrder() <=> $b->getOrder();
-        });
+        usort($collectedFields, fn (DDMField $a, DDMField $b) => $a->getOrder() <=> $b->getOrder());
 
         foreach ($collectedFields as $field) {
             $field->init($collectedFields);
@@ -86,6 +81,7 @@ class DDM
     public function addField(DDMField $field): self
     {
         $this->fields[] = $field;
+
         return $this;
     }
 

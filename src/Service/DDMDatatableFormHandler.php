@@ -16,17 +16,18 @@ class DDMDatatableFormHandler
     public function __construct(
         protected EntityManagerInterface $entityManager,
         protected TranslatorInterface $translator,
-        protected Environment $twig
+        protected Environment $twig,
     ) {
     }
 
     /**
      * @param array<string, mixed> $options
+     *
      * @return Response|array<string, mixed>
      */
-    public function handle(Request $request, DDM $ddm, object $entity = null, bool $preload = false, string $template = '', array $options = []): Response|array
+    public function handle(Request $request, DDM $ddm, ?object $entity = null, bool $preload = false, string $template = '', array $options = []): Response|array
     {
-        if ($template === '') {
+        if ('' === $template) {
             $template = $ddm->getFormTemplate() ?? '@DDM/vis/form.html.twig';
         }
 
@@ -35,7 +36,7 @@ class DDMDatatableFormHandler
                 if (!$field->isRenderInForm()) {
                     continue;
                 }
-                $method = 'get' . ucfirst($field->getIdentifier());
+                $method = 'get'.ucfirst((string) $field->getIdentifier());
                 if (method_exists($entity, $method)) {
                     $field->setValue((string) $entity->$method());
                 }
@@ -76,7 +77,7 @@ class DDMDatatableFormHandler
                 return new JsonResponse([
                     'success' => false,
                     'invalid' => $invalid,
-                    'valid' => $valid
+                    'valid' => $valid,
                 ]);
             }
 
@@ -91,7 +92,7 @@ class DDMDatatableFormHandler
                 if (!$field->isRenderInForm()) {
                     continue;
                 }
-                $method = 'set' . ucfirst($field->getIdentifier());
+                $method = 'set'.ucfirst((string) $field->getIdentifier());
                 if (method_exists($entity, $method)) {
                     $entity->$method($request->request->get($field->getIdentifier()));
                 }
@@ -101,7 +102,7 @@ class DDMDatatableFormHandler
                 'success' => true,
                 'isNew' => $isNew,
                 'entity' => $entity,
-                'message' => $isNew ? $this->translator->trans('ddm.successCreate', [], 'datatable') : $this->translator->trans('ddm.successUpdate', [], 'datatable')
+                'message' => $isNew ? $this->translator->trans('ddm.successCreate', [], 'datatable') : $this->translator->trans('ddm.successUpdate', [], 'datatable'),
             ];
         }
 

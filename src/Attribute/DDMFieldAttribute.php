@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace JBSNewMedia\DDMBundle\Attribute;
 
-use Attribute;
-
-#[Attribute(Attribute::TARGET_CLASS | Attribute::TARGET_METHOD | Attribute::TARGET_PROPERTY)]
+#[\Attribute(\Attribute::TARGET_CLASS | \Attribute::TARGET_METHOD | \Attribute::TARGET_PROPERTY)]
 class DDMFieldAttribute
 {
     public function __construct(

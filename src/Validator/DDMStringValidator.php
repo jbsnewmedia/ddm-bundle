@@ -18,6 +18,7 @@ class DDMStringValidator extends DDMValidator
     public function setMinLength(?int $minLength): self
     {
         $this->minLength = $minLength;
+
         return $this;
     }
 
@@ -29,29 +30,32 @@ class DDMStringValidator extends DDMValidator
     public function setMaxLength(?int $maxLength): self
     {
         $this->maxLength = $maxLength;
+
         return $this;
     }
 
     public function isRequired(): bool
     {
-        return $this->minLength !== null && $this->minLength > 0;
+        return null !== $this->minLength && $this->minLength > 0;
     }
 
     public function validate(mixed $value): bool
     {
         $length = mb_strlen((string) $value);
 
-        if ($this->minLength !== null && $length < $this->minLength) {
-            if ($this->errorMessage === null) {
+        if (null !== $this->minLength && $length < $this->minLength) {
+            if (null === $this->errorMessage) {
                 $this->setErrorMessage('error.ddm.validator.string.min_length');
             }
+
             return false;
         }
 
-        if ($this->maxLength !== null && $length > $this->maxLength) {
-            if ($this->errorMessage === null) {
+        if (null !== $this->maxLength && $length > $this->maxLength) {
+            if (null === $this->errorMessage) {
                 $this->setErrorMessage('error.ddm.validator.string.max_length');
             }
+
             return false;
         }
 

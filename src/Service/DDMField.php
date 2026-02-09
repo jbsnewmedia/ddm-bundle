@@ -35,6 +35,7 @@ abstract class DDMField
     public function setIdentifier(string $identifier): self
     {
         $this->identifier = $identifier;
+
         return $this;
     }
 
@@ -48,12 +49,14 @@ abstract class DDMField
     public function setSubFields(array $subFields): self
     {
         $this->subFields = $subFields;
+
         return $this;
     }
 
     public function addSubField(DDMField $subField): self
     {
         $this->subFields[] = $subField;
+
         return $this;
     }
 
@@ -65,6 +68,7 @@ abstract class DDMField
     public function setName(string $name): self
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -76,6 +80,7 @@ abstract class DDMField
     public function setType(string $type): self
     {
         $this->type = $type;
+
         return $this;
     }
 
@@ -87,6 +92,7 @@ abstract class DDMField
     public function setValue(?string $value): self
     {
         $this->value = $value;
+
         return $this;
     }
 
@@ -98,6 +104,7 @@ abstract class DDMField
     public function setOrder(int $order): self
     {
         $this->order = $order;
+
         return $this;
     }
 
@@ -109,6 +116,7 @@ abstract class DDMField
     public function setLivesearch(bool $livesearch): self
     {
         $this->livesearch = $livesearch;
+
         return $this;
     }
 
@@ -120,6 +128,7 @@ abstract class DDMField
     public function setExtendsearch(bool $extendsearch): self
     {
         $this->extendsearch = $extendsearch;
+
         return $this;
     }
 
@@ -131,6 +140,7 @@ abstract class DDMField
     public function setSortable(bool $sortable): self
     {
         $this->sortable = $sortable;
+
         return $this;
     }
 
@@ -142,6 +152,7 @@ abstract class DDMField
     public function setRenderInForm(bool $renderInForm): self
     {
         $this->renderInForm = $renderInForm;
+
         return $this;
     }
 
@@ -153,6 +164,7 @@ abstract class DDMField
     public function setRenderInTable(bool $renderInTable): self
     {
         $this->renderInTable = $renderInTable;
+
         return $this;
     }
 
@@ -164,6 +176,7 @@ abstract class DDMField
     public function setTemplate(string $template): self
     {
         $this->template = $template;
+
         return $this;
     }
 
@@ -173,17 +186,15 @@ abstract class DDMField
             $this->removeValidator($validator->getAlias());
         }
         $this->validators[] = $validator;
-        usort($this->validators, function (DDMValidator $a, DDMValidator $b) {
-            return $b->getPriority() <=> $a->getPriority();
-        });
+        usort($this->validators, fn (DDMValidator $a, DDMValidator $b) => $b->getPriority() <=> $a->getPriority());
+
         return $this;
     }
 
     public function removeValidator(string $alias): self
     {
-        $this->validators = array_filter($this->validators, function (DDMValidator $validator) use ($alias) {
-            return $validator->getAlias() !== $alias;
-        });
+        $this->validators = array_filter($this->validators, fn (DDMValidator $validator) => $validator->getAlias() !== $alias);
+
         return $this;
     }
 
@@ -200,6 +211,7 @@ abstract class DDMField
                 return true;
             }
         }
+
         return false;
     }
 
@@ -209,9 +221,11 @@ abstract class DDMField
         foreach ($this->validators as $validator) {
             if (!$validator->validate($value)) {
                 $this->errors[] = $validator->getErrorMessage();
+
                 return false;
             }
         }
+
         return true;
     }
 
@@ -227,11 +241,11 @@ abstract class DDMField
 
     public function render(object $entity): string|array
     {
-        if ($this->value !== null) {
+        if (null !== $this->value) {
             return $this->value;
         }
 
-        $method = 'get' . ucfirst($this->identifier);
+        $method = 'get'.ucfirst($this->identifier);
         if (method_exists($entity, $method)) {
             return (string) $entity->$method();
         }

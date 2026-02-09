@@ -22,6 +22,7 @@ abstract class DDMValidator
     public function setErrorMessage(?string $errorMessage): self
     {
         $this->errorMessage = $errorMessage;
+
         return $this;
     }
 
@@ -33,6 +34,7 @@ abstract class DDMValidator
     public function setAlias(?string $alias): self
     {
         $this->alias = $alias;
+
         return $this;
     }
 
@@ -44,6 +46,7 @@ abstract class DDMValidator
     public function setPriority(int $priority): self
     {
         $this->priority = $priority;
+
         return $this;
     }
 
