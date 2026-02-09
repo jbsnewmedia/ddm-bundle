@@ -23,6 +23,7 @@ abstract class DDMField
     protected string $template = '@DDM/fields/text.html.twig';
     /** @var DDMValidator[] */
     protected array $validators = [];
+    /** @var string[] */
     protected array $errors = [];
     /** @var DDMField[] */
     protected array $subFields = [];
@@ -220,7 +221,10 @@ abstract class DDMField
         $this->errors = [];
         foreach ($this->validators as $validator) {
             if (!$validator->validate($value)) {
-                $this->errors[] = $validator->getErrorMessage();
+                $errorMessage = $validator->getErrorMessage();
+                if (is_string($errorMessage)) {
+                    $this->errors[] = $errorMessage;
+                }
 
                 return false;
             }
@@ -229,6 +233,7 @@ abstract class DDMField
         return true;
     }
 
+    /** @return string[] */
     public function getErrors(): array
     {
         return $this->errors;
@@ -236,18 +241,26 @@ abstract class DDMField
 
     public function getError(): ?string
     {
-        return $this->errors[0] ?? null;
+        $error = $this->errors[0] ?? null;
+
+        return is_string($error) ? $error : null;
     }
 
+    /** @return string|array<mixed> */
     public function render(object $entity): string|array
     {
         if (null !== $this->value) {
-            return $this->value;
+            return (string) $this->value;
         }
 
         $method = 'get'.ucfirst($this->identifier);
         if (method_exists($entity, $method)) {
-            return (string) $entity->$method();
+            $result = $entity->$method();
+            if (is_string($result) || is_array($result)) {
+                return $result;
+            }
+
+            return is_scalar($result) || (is_object($result) && method_exists($result, '__toString')) ? (string) $result : '';
         }
 
         return '';
