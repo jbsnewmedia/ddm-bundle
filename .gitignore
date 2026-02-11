@@ -1,6 +1,11 @@
 /.idea/
 /vendor/
 /vendor-bin/**/vendor/
+/vendor-bin/**/composer.lock
 /.php-cs-fixer.cache
 /phpstan.neon
 /ai.txt
+/composer.lock
+/var/
+/.phpunit.result.cache
+/.env
