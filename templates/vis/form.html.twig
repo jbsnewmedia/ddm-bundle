@@ -24,15 +24,14 @@
 {% block body %}
     {{ parent() }}
 
+    {% set form_api_url = form_api_url|default(ddm.route('form_api') ? path(ddm.route('form_api'), {id: id|default(null)}) : '#') %}
     {{ include('@DDM/form/default.html.twig', {
         ddm: ddm,
-        options: options|default({
-            title: 'DDM Demo Formular',
-            form_options: {
-                apiUrl: form_api_url|default(path('vis_demo_ddm_form_api')),
-                method: 'POST',
-                submitLabel: 'formular.demo.submit'|vistrans([], 'vis_demo')
-            }
+        fields: fields,
+        options: options|default({})|merge({
+            title: title|default(ddm.title|default('DDM Demo Formular')),
+            action: options.form_options.apiUrl|default(form_api_url),
+            submitLabel: options.form_options.submitLabel|default('formular.demo.submit'|vistrans([], 'vis_demo'))
         })
     }) }}
 {% endblock %}

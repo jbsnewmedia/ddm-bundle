@@ -26,6 +26,7 @@ abstract class DDMField
     protected array $errors = [];
     /** @var DDMField[] */
     protected array $subFields = [];
+    protected array $routes = [];
 
     public function getIdentifier(): string
     {
@@ -223,6 +224,22 @@ abstract class DDMField
     public function getError(): ?string
     {
         return $this->errors[0] ?? null;
+    }
+
+    public function getRoutes(): array
+    {
+        return $this->routes;
+    }
+
+    public function setRoutes(array $routes): self
+    {
+        $this->routes = $routes;
+        return $this;
+    }
+
+    public function getRoute(string $name): ?string
+    {
+        return $this->routes[$name] ?? null;
     }
 
     public function render(object $entity): string|array

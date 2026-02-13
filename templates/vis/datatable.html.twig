@@ -26,10 +26,10 @@
     {{ include('@DDM/datatable/default.html.twig', {
         ddm: ddm,
         options: ddm_options|default({
-            add_url: path('vis_demo_new'),
-            title: 'DDM Demo Tabelle',
+            add_url: ddm.route('add') ? path(ddm.route('add')) : '#',
+            title: ddm.title|default('DDM Demo Tabelle'),
             datatable_options: {
-                apiUrl: path('vis_demo_ddm_api'),
+                apiUrl: ddm.route('api') ? path(ddm.route('api')) : '#',
                 sorting: {
                     nachname: 'asc'
                 }

@@ -12,8 +12,10 @@ class DDM
     protected string $context;
     protected ?string $formTemplate = null;
     protected ?string $datatableTemplate = null;
+    protected ?string $title = null;
     /** @var DDMField[] */
     protected iterable $fields = [];
+    protected array $routes = [];
 
     public function __construct(string $entityClass, string $context, iterable $fields)
     {
@@ -97,5 +99,35 @@ class DDM
     public function getEntityClass(): string
     {
         return $this->entityClass;
+    }
+
+    public function getRoutes(): array
+    {
+        return $this->routes;
+    }
+
+    public function setRoutes(array $routes): self
+    {
+        $this->routes = $routes;
+        foreach ($this->fields as $field) {
+            $field->setRoutes($routes);
+        }
+        return $this;
+    }
+
+    public function getRoute(string $name): ?string
+    {
+        return $this->routes[$name] ?? null;
+    }
+
+    public function getTitle(): ?string
+    {
+        return $this->title;
+    }
+
+    public function setTitle(?string $title): self
+    {
+        $this->title = $title;
+        return $this;
     }
 }

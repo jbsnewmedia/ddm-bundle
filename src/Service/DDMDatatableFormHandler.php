@@ -53,15 +53,8 @@ class DDMDatatableFormHandler
                 $value = $request->request->get($field->getIdentifier());
                 $error = null;
 
-                if (!$value) {
-                    $error = $this->translator->trans('ddm.fieldRequired', ['{field}' => $this->translator->trans($field->getName(), [], $translationDomain)], 'datatable');
-                } else {
-                    foreach ($field->getValidators() as $validator) {
-                        if (!$validator->validate($value)) {
-                            $error = $validator->getErrorMessage() ?? $this->translator->trans('ddm.fieldInvalid', ['{field}' => $this->translator->trans($field->getName(), [], $translationDomain)], 'datatable');
-                            break;
-                        }
-                    }
+                if (!$field->validate($value)) {
+                    $error = $field->getError() ?? $this->translator->trans('ddm.fieldInvalid', ['{field}' => $this->translator->trans($field->getName(), [], $translationDomain)], 'datatable');
                 }
 
                 if ($error) {
@@ -119,6 +112,7 @@ class DDMDatatableFormHandler
             'fields' => $fields,
             'ddm' => $ddm,
             'options' => $options,
+            'id' => $options['id'] ?? null,
         ]);
 
         return new Response($this->twig->render($template, $renderParams));

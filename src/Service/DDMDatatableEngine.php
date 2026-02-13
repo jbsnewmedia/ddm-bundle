@@ -136,7 +136,7 @@ class DDMDatatableEngine
         $result['count'] = [
             'total' => $total,
             'filtered' => $totalFiltered,
-            'start' => 1 + ($result['page'] - 1) * $result['perpage'],
+            'start' => $totalFiltered > 0 ? 1 + ($result['page'] - 1) * $result['perpage'] : 0,
             'end' => (int) min($totalFiltered, $result['page'] * $result['perpage']),
             'perpage' => $result['perpage'],
             'page' => $result['page'],
