@@ -36,7 +36,7 @@ class DDMDatatableFormHandler
                 }
                 $method = 'get' . ucfirst($field->getIdentifier());
                 if (method_exists($entity, $method)) {
-                    $field->setValue((string) $entity->$method());
+                    $field->setValueForm($field->prepareValue($entity->$method()));
                 }
             }
         }
@@ -50,7 +50,7 @@ class DDMDatatableFormHandler
                 if (!$field->isRenderInForm()) {
                     continue;
                 }
-                $value = $request->request->get($field->getIdentifier());
+                $value = $request->request->all()[$field->getIdentifier()] ?? null;
                 $error = null;
 
                 if (!$field->validate($value)) {
@@ -85,7 +85,8 @@ class DDMDatatableFormHandler
                 }
                 $method = 'set' . ucfirst($field->getIdentifier());
                 if (method_exists($entity, $method)) {
-                    $entity->$method($request->request->get($field->getIdentifier()));
+                    $value = $request->request->all()[$field->getIdentifier()] ?? null;
+                    $entity->$method($field->finalizeValue($value));
                 }
             }
 

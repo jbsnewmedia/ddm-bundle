@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace JBSNewMedia\DDMBundle\Service;
 
 use JBSNewMedia\DDMBundle\Validator\DDMValidator;
+use JBSNewMedia\DDMBundle\Value\DDMStringValue;
+use JBSNewMedia\DDMBundle\Value\DDMValue;
 
 abstract class DDMField
 {
@@ -12,8 +14,7 @@ abstract class DDMField
 
     protected string $identifier;
     protected string $name;
-    protected string $type;
-    protected ?string $value = null;
+    protected ?DDMValue $valueHandler = null;
     protected int $order = 100;
     protected bool $livesearch = true;
     protected bool $extendsearch = true;
@@ -69,26 +70,62 @@ abstract class DDMField
         return $this;
     }
 
-    public function getType(): string
+    public function getValueHandler(): DDMValue
     {
-        return $this->type;
+        if ($this->valueHandler === null) {
+            $this->valueHandler = new DDMStringValue();
+        }
+        return $this->valueHandler;
     }
 
-    public function setType(string $type): self
+    public function setValueHandler(DDMValue $valueHandler): self
     {
-        $this->type = $type;
+        $this->valueHandler = $valueHandler;
         return $this;
     }
 
-    public function getValue(): ?string
+    /**
+     * Gibt den rohen Wert für das Formular zurück.
+     */
+    public function getValueForm(): mixed
     {
-        return $this->value;
+        return $this->getValueHandler()->getValue();
     }
 
-    public function setValue(?string $value): self
+    /**
+     * Setzt den Wert über den ValueHandler (für das Formular).
+     */
+    public function setValueForm(mixed $value): self
     {
-        $this->value = $value;
+        $this->getValueHandler()->setValue($value);
         return $this;
+    }
+
+    // BC: Alias für Twig/Templates, die noch `field.value`/`getValue()` verwenden
+    public function getValue(): mixed
+    {
+        return $this->getValueForm();
+    }
+
+    // BC: Alias für alte Aufrufer
+    public function setValue(mixed $value): self
+    {
+        return $this->setValueForm($value);
+    }
+
+    /**
+     * Gibt den Wert für die Datatable zurück.
+     */
+    public function getValueDatatable(object $entity): string
+    {
+        $method = 'get' . ucfirst($this->identifier);
+        if (method_exists($entity, $method)) {
+            $rawResult = $entity->$method();
+            $prepared = $this->prepareValue($rawResult);
+            $this->getValueHandler()->setValue($prepared);
+        }
+
+        return (string) $this->getValueHandler();
     }
 
     public function getOrder(): int
@@ -242,18 +279,23 @@ abstract class DDMField
         return $this->routes[$name] ?? null;
     }
 
-    public function render(object $entity): string|array
+    public function renderDatatable(object $entity): string
     {
-        if ($this->value !== null) {
-            return $this->value;
-        }
+        return $this->getValueDatatable($entity);
+    }
 
+    public function renderForm(object $entity): mixed
+    {
         $method = 'get' . ucfirst($this->identifier);
         if (method_exists($entity, $method)) {
-            return (string) $entity->$method();
+            return $this->prepareValue($entity->$method());
         }
+        return null;
+    }
 
-        return '';
+    public function renderSearch(object $entity): mixed
+    {
+        return $this->renderDatatable($entity);
     }
 
     /**
@@ -261,5 +303,15 @@ abstract class DDMField
      */
     public function init(iterable $allFields): void
     {
+    }
+
+    public function prepareValue(mixed $value): mixed
+    {
+        return $value;
+    }
+
+    public function finalizeValue(mixed $value): mixed
+    {
+        return $value;
     }
 }

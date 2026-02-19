@@ -128,7 +128,7 @@ class DDMDatatableEngine
                 if (!$field->isRenderInTable()) {
                     continue;
                 }
-                $row[$field->getIdentifier()] = $field->render($entity);
+                $row[$field->getIdentifier()] = $field->renderDatatable($entity);
             }
             $result['data'][] = ['data' => $row, 'config' => [], 'class' => '', 'data_class' => []];
         }
