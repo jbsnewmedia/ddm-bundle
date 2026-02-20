@@ -1,0 +1,3 @@
+string:
+  min_length: "The input is too short (min. {min_length} characters, currently {current_length} characters)."
+  max_length: "The input is too long (max. {max_length} characters, currently {current_length} characters)."
