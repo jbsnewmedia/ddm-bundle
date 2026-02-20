@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace JBSNewMedia\DDMBundle\Service;
 
 use Doctrine\ORM\EntityManagerInterface;
+use JBSNewMedia\DDMBundle\Trait\DDMEntityAccessor;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -13,98 +14,149 @@ use Twig\Environment;
 
 class DDMDatatableFormHandler
 {
+    use DDMEntityAccessor;
+
     public function __construct(
-        protected EntityManagerInterface $entityManager,
-        protected TranslatorInterface $translator,
-        protected Environment $twig
+        private readonly EntityManagerInterface $entityManager,
+        private readonly TranslatorInterface $translator,
+        private readonly Environment $twig
     ) {
     }
 
     /**
+     * Handles form rendering (GET) and form submission (POST).
+     *
+     * Options:
+     *   - translation_domain (string|null): translation domain for field labels
+     *   - id (mixed): optional entity id for templates
+     *   - auto_flush (bool): whether to call entityManager::flush() after persist (default: true)
+     *
      * @param array<string, mixed> $options
      */
-    public function handle(Request $request, DDM $ddm, object $entity = null, bool $preload = false, string $template = '', array $options = []): Response
-    {
+    public function handle(
+        Request $request,
+        DDM $ddm,
+        ?object $entity = null,
+        bool $preload = false,
+        string $template = '',
+        array $options = []
+    ): Response {
         if ($template === '') {
             $template = $ddm->getFormTemplate() ?? '@DDM/vis/form.html.twig';
         }
 
-        if ($entity && !$preload) {
+        // Preload entity values into fields for GET display
+        if ($entity !== null && !$preload) {
             foreach ($ddm->getFields() as $field) {
                 if (!$field->isRenderInForm()) {
                     continue;
                 }
-                $method = 'get' . ucfirst($field->getIdentifier());
-                if (method_exists($entity, $method)) {
-                    $field->setValueForm($field->prepareValue($entity->$method()));
+                $value = $this->getEntityValue($entity, $field->getIdentifier());
+                if ($value !== null) {
+                    $field->setValueForm($field->prepareValue($value));
                 }
             }
         }
 
         if ($request->isMethod('POST')) {
-            $invalid = [];
-            $valid = [];
-            $translationDomain = $options['translation_domain'] ?? null;
+            return $this->handlePost($request, $ddm, $entity, $preload, $options);
+        }
 
-            $ddm->setEntity($entity);
+        return $this->renderForm($ddm, $template, $options);
+    }
 
-            foreach ($ddm->getFields() as $field) {
-                if (!$field->isRenderInForm()) {
-                    continue;
-                }
+    /**
+     * @param array<string, mixed> $options
+     */
+    private function handlePost(
+        Request $request,
+        DDM $ddm,
+        ?object $entity,
+        bool $preload,
+        array $options
+    ): JsonResponse {
+        $invalid = [];
+        $valid = [];
+        $translationDomain = isset($options['translation_domain']) ? (string) $options['translation_domain'] : null;
 
-                $value = $request->request->all()[$field->getIdentifier()] ?? null;
-                $error = null;
+        $ddm->setEntity($entity);
 
-                if (!$field->validate($value)) {
-                    $fieldError = $field->getError();
-                    $error = $this->translator->trans($fieldError['message'], $fieldError['parameters'] ?? [], $fieldError['domain']);
-                }
-
-                if ($error) {
-                    $invalid[$field->getIdentifier()] = $error;
-                } else {
-                    $valid[] = $field->getIdentifier();
-                }
+        foreach ($ddm->getFields() as $field) {
+            if (!$field->isRenderInForm()) {
+                continue;
             }
 
-            if (!empty($invalid)) {
-                return new JsonResponse([
-                    'success' => false,
-                    'invalid' => $invalid,
-                    'valid' => $valid
-                ]);
-            }
+            /** @var array<string, mixed> $requestData */
+            $requestData = $request->request->all();
+            $value = $requestData[$field->getIdentifier()] ?? null;
+            $error = null;
 
-            $isNew = false;
-            if ($preload || !$entity) {
-                $entityClass = $ddm->getEntityClass();
-                $entity = new $entityClass();
-                $isNew = true;
-            }
-
-            foreach ($ddm->getFields() as $field) {
-                if (!$field->isRenderInForm()) {
-                    continue;
-                }
-                $method = 'set' . ucfirst($field->getIdentifier());
-                if (method_exists($entity, $method)) {
-                    $value = $request->request->all()[$field->getIdentifier()] ?? null;
-                    $entity->$method($field->finalizeValue($value));
+            if (!$field->validate($value)) {
+                $fieldError = $field->getError();
+                if ($fieldError !== null) {
+                    $error = $this->translator->trans(
+                        $fieldError['message'],
+                        $fieldError['parameters'] ?? [],
+                        $fieldError['domain']
+                    );
                 }
             }
 
-            if ($isNew) {
-                $this->entityManager->persist($entity);
+            if ($error !== null) {
+                $invalid[$field->getIdentifier()] = $error;
+            } else {
+                $valid[] = $field->getIdentifier();
             }
-            $this->entityManager->flush();
+        }
 
+        if ($invalid !== []) {
             return new JsonResponse([
-                'success' => true,
-                'message' => $isNew ? $this->translator->trans('ddm.successCreate', [], 'datatable') : $this->translator->trans('ddm.successUpdate', [], 'datatable')
+                'success' => false,
+                'invalid' => $invalid,
+                'valid' => $valid,
             ]);
         }
 
+        $isNew = false;
+        if ($preload || $entity === null) {
+            $entityClass = $ddm->getEntityClass();
+            $entity = new $entityClass();
+            $isNew = true;
+        }
+
+        /** @var array<string, mixed> $requestData */
+        $requestData = $request->request->all();
+
+        foreach ($ddm->getFields() as $field) {
+            if (!$field->isRenderInForm()) {
+                continue;
+            }
+            $value = $requestData[$field->getIdentifier()] ?? null;
+            $this->setEntityValue($entity, $field->getIdentifier(), $field->finalizeValue($value));
+        }
+
+        if ($isNew) {
+            $this->entityManager->persist($entity);
+        }
+
+        $autoFlush = isset($options['auto_flush']) ? (bool) $options['auto_flush'] : true;
+        if ($autoFlush) {
+            $this->entityManager->flush();
+        }
+
+        $messageKey = $isNew ? 'ddm.successCreate' : 'ddm.successUpdate';
+
+        return new JsonResponse([
+            'success' => true,
+            'message' => $this->translator->trans($messageKey, [], 'datatable'),
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed> $options
+     */
+    private function renderForm(DDM $ddm, string $template, array $options): Response
+    {
         $fields = [];
         foreach ($ddm->getFields() as $field) {
             if (!$field->isRenderInForm()) {

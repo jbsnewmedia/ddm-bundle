@@ -4,18 +4,29 @@ declare(strict_types=1);
 
 namespace JBSNewMedia\DDMBundle\Service;
 
+use Doctrine\ORM\QueryBuilder;
+use JBSNewMedia\DDMBundle\Contract\DDMFieldInterface;
+use JBSNewMedia\DDMBundle\Contract\DDMValidatorInterface;
+use JBSNewMedia\DDMBundle\Contract\DDMValueInterface;
+use JBSNewMedia\DDMBundle\Trait\DDMEntityAccessor;
 use JBSNewMedia\DDMBundle\Validator\DDMValidator;
 use JBSNewMedia\DDMBundle\Value\DDMStringValue;
-use Doctrine\ORM\QueryBuilder;
-use JBSNewMedia\DDMBundle\Value\DDMValue;
 
-abstract class DDMField
+abstract class DDMField implements DDMFieldInterface
 {
+    use DDMEntityAccessor;
+
     public const DEFAULT_PRIORITY = 100;
+
+    /**
+     * Reserved identifier for the "options" column (action buttons column).
+     * Use this constant instead of the string literal 'options'.
+     */
+    public const IDENTIFIER_OPTIONS = 'options';
 
     protected string $identifier = '';
     protected string $name = '';
-    protected ?DDMValue $valueHandler = null;
+    protected ?DDMValueInterface $valueHandler = null;
     protected int $order = 100;
     protected bool $livesearch = true;
     protected bool $extendsearch = true;
@@ -24,39 +35,44 @@ abstract class DDMField
     protected bool $renderInTable = true;
     protected bool $renderSearch = true;
     protected string $template = '@DDM/fields/text.html.twig';
-    /** @var DDMValidator[] */
+    /** @var DDMValidatorInterface[] */
     protected array $validators = [];
+    /** @var array<int, array{message: string, parameters: array<string, string>, domain: string}> */
     protected array $errors = [];
-    /** @var DDMField[] */
+    /** @var DDMFieldInterface[] */
     protected array $subFields = [];
+    /** @var array<string, string> */
     protected array $routes = [];
     protected ?DDM $ddm = null;
+
+    /** Static counter for unique query parameter names (replaces uniqid()). */
+    private static int $paramCounter = 0;
 
     public function getIdentifier(): string
     {
         return $this->identifier;
     }
 
-    public function setIdentifier(string $identifier): self
+    public function setIdentifier(string $identifier): static
     {
         $this->identifier = $identifier;
         return $this;
     }
 
-    /** @return DDMField[] */
+    /** @return DDMFieldInterface[] */
     public function getSubFields(): array
     {
         return $this->subFields;
     }
 
-    /** @param DDMField[] $subFields */
-    public function setSubFields(array $subFields): self
+    /** @param DDMFieldInterface[] $subFields */
+    public function setSubFields(array $subFields): static
     {
         $this->subFields = $subFields;
         return $this;
     }
 
-    public function addSubField(DDMField $subField): self
+    public function addSubField(DDMFieldInterface $subField): static
     {
         $this->subFields[] = $subField;
         return $this;
@@ -67,13 +83,13 @@ abstract class DDMField
         return $this->name;
     }
 
-    public function setName(string $name): self
+    public function setName(string $name): static
     {
         $this->name = $name;
         return $this;
     }
 
-    public function getValueHandler(): DDMValue
+    public function getValueHandler(): DDMValueInterface
     {
         if ($this->valueHandler === null) {
             $this->valueHandler = new DDMStringValue();
@@ -81,14 +97,14 @@ abstract class DDMField
         return $this->valueHandler;
     }
 
-    public function setValueHandler(DDMValue $valueHandler): self
+    public function setValueHandler(DDMValueInterface $valueHandler): static
     {
         $this->valueHandler = $valueHandler;
         return $this;
     }
 
     /**
-     * Gibt den rohen Wert für das Formular zurück.
+     * Returns the raw value for the form.
      */
     public function getValueForm(): mixed
     {
@@ -96,36 +112,38 @@ abstract class DDMField
     }
 
     /**
-     * Setzt den Wert über den ValueHandler (für das Formular).
+     * Sets the value via the ValueHandler (for forms).
      */
-    public function setValueForm(mixed $value): self
+    public function setValueForm(mixed $value): static
     {
         $this->getValueHandler()->setValue($value);
         return $this;
     }
 
-    // BC: Alias für Twig/Templates, die noch `field.value`/`getValue()` verwenden
+    /**
+     * @deprecated Use getValueForm() instead.
+     */
     public function getValue(): mixed
     {
         return $this->getValueForm();
     }
 
-    // BC: Alias für alte Aufrufer
-    public function setValue(mixed $value): self
+    /**
+     * @deprecated Use setValueForm() instead.
+     */
+    public function setValue(mixed $value): static
     {
         return $this->setValueForm($value);
     }
 
     /**
-     * Gibt den Wert für die Datatable zurück.
+     * Returns the stringified value for the datatable, read from the entity via getter convention.
      */
     public function getValueDatatable(object $entity): string
     {
-        $method = 'get' . ucfirst($this->identifier);
-        if (method_exists($entity, $method)) {
-            $rawResult = $entity->$method();
-            $prepared = $this->prepareValue($rawResult);
-            $this->getValueHandler()->setValue($prepared);
+        $rawResult = $this->getEntityValue($entity, $this->identifier);
+        if ($rawResult !== null) {
+            $this->getValueHandler()->setValue($this->prepareValue($rawResult));
         }
 
         return (string) $this->getValueHandler();
@@ -136,7 +154,7 @@ abstract class DDMField
         return $this->order;
     }
 
-    public function setOrder(int $order): self
+    public function setOrder(int $order): static
     {
         $this->order = $order;
         return $this;
@@ -147,7 +165,7 @@ abstract class DDMField
         return $this->livesearch;
     }
 
-    public function setLivesearch(bool $livesearch): self
+    public function setLivesearch(bool $livesearch): static
     {
         $this->livesearch = $livesearch;
         return $this;
@@ -158,7 +176,7 @@ abstract class DDMField
         return $this->extendsearch;
     }
 
-    public function setExtendsearch(bool $extendsearch): self
+    public function setExtendsearch(bool $extendsearch): static
     {
         $this->extendsearch = $extendsearch;
         return $this;
@@ -169,7 +187,7 @@ abstract class DDMField
         return $this->sortable;
     }
 
-    public function setSortable(bool $sortable): self
+    public function setSortable(bool $sortable): static
     {
         $this->sortable = $sortable;
         return $this;
@@ -180,7 +198,7 @@ abstract class DDMField
         return $this->renderInForm;
     }
 
-    public function setRenderInForm(bool $renderInForm): self
+    public function setRenderInForm(bool $renderInForm): static
     {
         $this->renderInForm = $renderInForm;
         return $this;
@@ -191,7 +209,7 @@ abstract class DDMField
         return $this->renderInTable;
     }
 
-    public function setRenderInTable(bool $renderInTable): self
+    public function setRenderInTable(bool $renderInTable): static
     {
         $this->renderInTable = $renderInTable;
         return $this;
@@ -202,7 +220,7 @@ abstract class DDMField
         return $this->renderSearch;
     }
 
-    public function setRenderSearch(bool $renderSearch): self
+    public function setRenderSearch(bool $renderSearch): static
     {
         $this->renderSearch = $renderSearch;
         return $this;
@@ -213,34 +231,35 @@ abstract class DDMField
         return $this->template;
     }
 
-    public function setTemplate(string $template): self
+    public function setTemplate(string $template): static
     {
         $this->template = $template;
         return $this;
     }
 
-    public function addValidator(DDMValidator $validator): self
+    public function addValidator(DDMValidatorInterface $validator): static
     {
-        if ($validator->getAlias()) {
+        if ($validator->getAlias() !== null) {
             $this->removeValidator($validator->getAlias());
         }
         $validator->setField($this);
         $this->validators[] = $validator;
-        usort($this->validators, function (DDMValidator $a, DDMValidator $b) {
+        usort($this->validators, static function (DDMValidatorInterface $a, DDMValidatorInterface $b): int {
             return $b->getPriority() <=> $a->getPriority();
         });
         return $this;
     }
 
-    public function removeValidator(string $alias): self
+    public function removeValidator(string $alias): static
     {
-        $this->validators = array_filter($this->validators, function (DDMValidator $validator) use ($alias) {
-            return $validator->getAlias() !== $alias;
-        });
+        $this->validators = array_values(array_filter(
+            $this->validators,
+            static fn (DDMValidatorInterface $v): bool => $v->getAlias() !== $alias
+        ));
         return $this;
     }
 
-    /** @return DDMValidator[] */
+    /** @return DDMValidatorInterface[] */
     public function getValidators(): array
     {
         return $this->validators;
@@ -263,33 +282,37 @@ abstract class DDMField
             if (!$validator->validate($value)) {
                 $domain = 'ddm_validator_' . ($validator->getAlias() ?? 'default');
                 $this->errors[] = [
-                    'message' => $validator->getErrorMessage(),
+                    'message' => (string) $validator->getErrorMessage(),
                     'parameters' => $validator->getErrorMessageParameters(),
-                    'domain' => $domain
+                    'domain' => $domain,
                 ];
+                // Fail-fast: stop at first error
                 return false;
             }
         }
         return true;
     }
 
-
+    /** @return array<int, array{message: string, parameters: array<string, string>, domain: string}> */
     public function getErrors(): array
     {
         return $this->errors;
     }
 
+    /** @return array{message: string, parameters: array<string, string>, domain: string}|null */
     public function getError(): ?array
     {
         return $this->errors[0] ?? null;
     }
 
+    /** @return array<string, string> */
     public function getRoutes(): array
     {
         return $this->routes;
     }
 
-    public function setRoutes(array $routes): self
+    /** @param array<string, string> $routes */
+    public function setRoutes(array $routes): static
     {
         $this->routes = $routes;
         return $this;
@@ -307,11 +330,7 @@ abstract class DDMField
 
     public function renderForm(object $entity): mixed
     {
-        $method = 'get' . ucfirst($this->identifier);
-        if (method_exists($entity, $method)) {
-            return $this->prepareValue($entity->$method());
-        }
-        return null;
+        return $this->prepareValue($this->getEntityValue($entity, $this->identifier));
     }
 
     public function renderSearch(object $entity): mixed
@@ -320,7 +339,7 @@ abstract class DDMField
     }
 
     /**
-     * @param iterable<DDMField> $allFields
+     * @param iterable<DDMFieldInterface> $allFields
      */
     public function init(DDM $ddm, iterable $allFields): void
     {
@@ -336,6 +355,7 @@ abstract class DDMField
     {
         return $value;
     }
+
     public function getDdm(): ?DDM
     {
         return $this->ddm;
@@ -343,11 +363,11 @@ abstract class DDMField
 
     public function getSearchExpression(QueryBuilder $qb, string $alias, string $search): ?object
     {
-        if (!$this->isLivesearch() || $this->getIdentifier() === 'options') {
+        if (!$this->isLivesearch() || $this->getIdentifier() === self::IDENTIFIER_OPTIONS) {
             return null;
         }
 
-        $paramName = 'search_' . str_replace('.', '_', $this->getIdentifier() . '_' . uniqid());
+        $paramName = 'search_' . str_replace('.', '_', $this->getIdentifier()) . '_' . (++self::$paramCounter);
         $qb->setParameter($paramName, '%' . $search . '%');
 
         return $qb->expr()->like($alias . '.' . $this->getIdentifier(), ':' . $paramName);

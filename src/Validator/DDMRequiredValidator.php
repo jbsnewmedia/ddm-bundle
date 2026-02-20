@@ -11,8 +11,6 @@ class DDMRequiredValidator extends DDMValidator
         $this->alias = 'required';
     }
 
-    protected int $priority = self::DEFAULT_PRIORITY;
-
     public function validate(mixed $value): bool
     {
         if ($value === null) {

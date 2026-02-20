@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace JBSNewMedia\DDMBundle\Service;
 
-use JBSNewMedia\DDMBundle\Attribute\DDMFieldAttribute;
-
 use Doctrine\ORM\EntityManagerInterface;
+use JBSNewMedia\DDMBundle\Attribute\DDMFieldAttribute;
 
 class DDM
 {
@@ -16,16 +15,24 @@ class DDM
     protected ?string $datatableTemplate = null;
     protected ?string $title = null;
     /** @var DDMField[] */
-    protected iterable $fields = [];
+    protected array $fields = [];
+    /** @var array<string, string> */
     protected array $routes = [];
     protected EntityManagerInterface $entityManager;
-    protected mixed $entity = null;
+    protected object|null $entity = null;
 
-    public function __construct(string $entityClass, string $context, iterable $fields, EntityManagerInterface $entityManager)
-    {
+    /**
+     * @param iterable<DDMField> $fields
+     */
+    public function __construct(
+        string $entityClass,
+        string $context,
+        iterable $fields,
+        EntityManagerInterface $entityManager
+    ) {
         $this->entityClass = $entityClass;
         $this->context = $context;
-        $this->fields = $fields;
+        $this->fields = $fields instanceof \Traversable ? iterator_to_array($fields) : $fields;
         $this->entityManager = $entityManager;
         $this->loadFields();
     }
@@ -52,6 +59,9 @@ class DDM
         return $this;
     }
 
+    /**
+     * Sets the same template for both the form and the datatable view.
+     */
     public function setTemplate(?string $template): self
     {
         $this->formTemplate = $template;
@@ -62,14 +72,22 @@ class DDM
     protected function loadFields(): void
     {
         $collectedFields = [];
+
+        // Build short name once – avoids repeated ReflectionClass construction inside the loop
+        $entityShortName = strtolower((new \ReflectionClass($this->entityClass))->getShortName());
+
         foreach ($this->fields as $field) {
             $reflectionClass = new \ReflectionClass($field);
             $attributes = $reflectionClass->getAttributes(DDMFieldAttribute::class);
             foreach ($attributes as $attribute) {
                 /** @var DDMFieldAttribute $ddmFieldAttribute */
                 $ddmFieldAttribute = $attribute->newInstance();
-                $entityMatches = $ddmFieldAttribute->entity === $this->entityClass || ($ddmFieldAttribute->entity && strtolower($ddmFieldAttribute->entity) === strtolower((new \ReflectionClass($this->entityClass))->getShortName()));
-                $contextMatches = $ddmFieldAttribute->identifier === $this->context || $ddmFieldAttribute->entity === $this->context;
+
+                $entityMatches = $ddmFieldAttribute->entity === $this->entityClass
+                    || ($ddmFieldAttribute->entity !== null
+                        && strtolower($ddmFieldAttribute->entity) === $entityShortName);
+                $contextMatches = $ddmFieldAttribute->identifier === $this->context
+                    || $ddmFieldAttribute->entity === $this->context;
 
                 if ($entityMatches || $contextMatches) {
                     $field->setOrder($ddmFieldAttribute->order);
@@ -79,7 +97,7 @@ class DDM
             }
         }
 
-        usort($collectedFields, function (DDMField $a, DDMField $b) {
+        usort($collectedFields, static function (DDMField $a, DDMField $b): int {
             return $a->getOrder() <=> $b->getOrder();
         });
 
@@ -96,6 +114,7 @@ class DDM
         return $this;
     }
 
+    /** @return DDMField[] */
     public function getFields(): array
     {
         return $this->fields;
@@ -111,31 +130,32 @@ class DDM
         return $this->entityManager;
     }
 
-    public function setEntity(mixed $entity): self
+    public function setEntity(object|null $entity): self
     {
         $this->entity = $entity;
         return $this;
     }
 
-    public function getEntity(): mixed
+    public function getEntity(): object|null
     {
         return $this->entity;
     }
 
     public function getEntityId(): mixed
     {
-        $entity = $this->entity;
-        if ($entity && \is_object($entity) && method_exists($entity, 'getId')) {
-            return $entity->getId();
+        if ($this->entity !== null && method_exists($this->entity, 'getId')) {
+            return $this->entity->getId();
         }
         return null;
     }
 
+    /** @return array<string, string> */
     public function getRoutes(): array
     {
         return $this->routes;
     }
 
+    /** @param array<string, string> $routes */
     public function setRoutes(array $routes): self
     {
         $this->routes = $routes;

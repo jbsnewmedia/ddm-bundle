@@ -13,12 +13,14 @@ use Twig\Environment;
 class DDMDatatableSearchHandler
 {
     public function __construct(
-        protected TranslatorInterface $translator,
-        protected Environment $twig
+        private readonly TranslatorInterface $translator,
+        private readonly Environment $twig
     ) {
     }
 
     /**
+     * Handles extended search form rendering (GET) and search session persistence (POST).
+     *
      * @param array<string, mixed> $options
      */
     public function handle(Request $request, DDM $ddm, string $template = '', array $options = []): Response
@@ -28,14 +30,15 @@ class DDMDatatableSearchHandler
         }
 
         $session = $request->getSession();
-        $sessionKey = 'ddm_search_' . ($options['id'] ?? 'default');
+        $sessionKey = 'ddm_search_' . (isset($options['id']) ? (string) $options['id'] : 'default');
 
         if ($request->isMethod('POST')) {
+            /** @var array<string, mixed> $searchFields */
             $searchFields = $request->request->all()['search_fields'] ?? [];
 
-            // Clean empty values
+            // Remove empty values
             foreach ($searchFields as $key => $value) {
-                if ($value === null || $value === '' || (is_array($value) && empty($value))) {
+                if ($value === null || $value === '' || (is_array($value) && $value === [])) {
                     unset($searchFields[$key]);
                 }
             }
@@ -44,7 +47,7 @@ class DDMDatatableSearchHandler
                 $session->remove($sessionKey);
                 return new JsonResponse([
                     'success' => true,
-                    'search_fields' => []
+                    'search_fields' => [],
                 ]);
             }
 
@@ -52,10 +55,11 @@ class DDMDatatableSearchHandler
 
             return new JsonResponse([
                 'success' => true,
-                'search_fields' => $searchFields
+                'search_fields' => $searchFields,
             ]);
         }
 
+        /** @var array<string, mixed> $searchData */
         $searchData = $session->get($sessionKey, []);
 
         $fields = [];
@@ -74,7 +78,7 @@ class DDMDatatableSearchHandler
             'ddm' => $ddm,
             'options' => $options,
             'id' => $options['id'] ?? null,
-            'is_search' => true
+            'is_search' => true,
         ]);
 
         return new Response($this->twig->render($template, $renderParams));

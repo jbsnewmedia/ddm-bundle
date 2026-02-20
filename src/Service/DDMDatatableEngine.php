@@ -13,19 +13,23 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 class DDMDatatableEngine
 {
     public function __construct(
-        protected TranslatorInterface $translator,
-        protected EntityManagerInterface $entityManager
+        private readonly TranslatorInterface $translator,
+        private readonly EntityManagerInterface $entityManager
     ) {
     }
 
-    public function handleRequest(Request $request, DDM $ddm, ?QueryBuilder $qb = null, ?string $translationDomain = null): JsonResponse
-    {
+    public function handleRequest(
+        Request $request,
+        DDM $ddm,
+        ?QueryBuilder $qb = null,
+        ?string $translationDomain = null
+    ): JsonResponse {
         $fields = $ddm->getFields();
         $entityClass = $ddm->getEntityClass();
         $repository = $this->entityManager->getRepository($entityClass);
-        $alias = 'p'; // Default alias, should probably be more dynamic or passed in
+        $alias = 'p';
 
-        if (null === $qb) {
+        if ($qb === null) {
             $qb = $repository->createQueryBuilder($alias);
         } else {
             $aliases = $qb->getRootAliases();
@@ -44,9 +48,9 @@ class DDMDatatableEngine
             $column = [
                 'name' => $this->translator->trans($field->getName(), [], $translationDomain),
                 'sortable' => $field->isSortable(),
-                'id' => $field->getIdentifier()
+                'id' => $field->getIdentifier(),
             ];
-            if ($field->getIdentifier() === 'options') {
+            if ($field->getIdentifier() === DDMField::IDENTIFIER_OPTIONS) {
                 $column['raw'] = true;
                 $column['class'] = 'avalynx-datatable-options';
             }
@@ -56,45 +60,42 @@ class DDMDatatableEngine
         $params = $request->isMethod('POST') ? $request->request : $request->query;
 
         if ($params->has('sorting')) {
-            $result['sorting'] = json_decode((string) $params->get('sorting'), true);
-            if (null === $result['sorting'] || false === $result['sorting']) {
-                $result['sorting'] = [];
-            }
+            /** @var mixed $sortingRaw */
+            $sortingRaw = json_decode((string) $params->get('sorting'), true);
+            $result['sorting'] = is_array($sortingRaw) ? $sortingRaw : [];
         } else {
             $result['sorting'] = [];
         }
 
-        if ($params->has('search')) {
-            $result['search']['value'] = $params->get('search');
-        } else {
-            $result['search'] = ['value' => ''];
-        }
-
+        $result['search'] = ['value' => $params->has('search') ? (string) $params->get('search') : ''];
         $result['page'] = $params->getInt('page', 1);
         $result['perpage'] = $params->getInt('perpage', 10);
         $result['searchisnew'] = $params->getBoolean('searchisnew', false);
-        $result['search_fields'] = $params->all()['search_fields'] ?? [];
 
-        // Clean empty values from search_fields
-        foreach ($result['search_fields'] as $key => $value) {
-            if ($value === null || $value === '' || (is_array($value) && empty($value))) {
-                unset($result['search_fields'][$key]);
+        /** @var array<string, mixed> $searchFields */
+        $searchFields = $params->all()['search_fields'] ?? [];
+
+        // Remove empty values from search_fields
+        foreach ($searchFields as $key => $value) {
+            if ($value === null || $value === '' || (is_array($value) && $value === [])) {
+                unset($searchFields[$key]);
             }
         }
+        $result['search_fields'] = $searchFields;
 
         if ($result['searchisnew']) {
             $result['page'] = 1;
         }
 
-        // Global Search
-        if ('' !== $result['search']['value']) {
+        // Global search
+        if ($result['search']['value'] !== '') {
             $orX = $qb->expr()->orX();
             foreach ($fields as $field) {
-                if ($field->getIdentifier() === 'options') {
+                if ($field->getIdentifier() === DDMField::IDENTIFIER_OPTIONS) {
                     continue;
                 }
                 $searchExpression = $field->getSearchExpression($qb, $alias, $result['search']['value']);
-                if ($searchExpression) {
+                if ($searchExpression !== null) {
                     $orX->add($searchExpression);
                 }
             }
@@ -103,17 +104,19 @@ class DDMDatatableEngine
             }
         }
 
-        // Extended Search
-        if (!empty($result['search_fields'])) {
+        // Extended search (per-field)
+        if ($result['search_fields'] !== []) {
             foreach ($result['search_fields'] as $fieldIdentifier => $searchValue) {
                 if ($searchValue === null || $searchValue === '') {
                     continue;
                 }
                 foreach ($fields as $field) {
                     if ($field->getIdentifier() === $fieldIdentifier && $field->isExtendsearch()) {
-                        $expressionValue = is_array($searchValue) ? implode(',', $searchValue) : (string) $searchValue;
+                        $expressionValue = is_array($searchValue)
+                            ? implode(',', $searchValue)
+                            : (string) $searchValue;
                         $searchExpression = $field->getSearchExpression($qb, $alias, $expressionValue);
-                        if ($searchExpression) {
+                        if ($searchExpression !== null) {
                             $qb->andWhere($searchExpression);
                         }
                     }
@@ -121,17 +124,22 @@ class DDMDatatableEngine
             }
         }
 
-        // Count filtered
+        // Count total (unfiltered) and filtered
         $countQb = clone $qb;
-        $rootId = 'id'; // Default root id field
         $classMetadata = $this->entityManager->getClassMetadata($entityClass);
         $identifier = $classMetadata->getIdentifierFieldNames();
-        if (count($identifier) > 0) {
-            $rootId = $identifier[0];
-        }
+        $rootId = count($identifier) > 0 ? $identifier[0] : 'id';
 
-        $totalFiltered = (int) $countQb->select('count(' . $alias . '.' . $rootId . ')')->getQuery()->getSingleScalarResult();
-        $total = (int) $repository->createQueryBuilder($alias)->select('count(' . $alias . '.' . $rootId . ')')->getQuery()->getSingleScalarResult();
+        $totalFiltered = (int) $countQb
+            ->select('count(' . $alias . '.' . $rootId . ')')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        $total = (int) $repository
+            ->createQueryBuilder($alias)
+            ->select('count(' . $alias . '.' . $rootId . ')')
+            ->getQuery()
+            ->getSingleScalarResult();
 
         // Sorting
         foreach ($result['sorting'] as $key => $sort) {
@@ -139,10 +147,7 @@ class DDMDatatableEngine
         }
 
         // Pagination
-        $maxPage = (int) ceil($totalFiltered / $result['perpage']);
-        if ($maxPage < 1) {
-            $maxPage = 1;
-        }
+        $maxPage = max(1, (int) ceil($totalFiltered / $result['perpage']));
         $result['page'] = (int) max(1, min($result['page'], $maxPage));
 
         $qb->setFirstResult(($result['page'] - 1) * $result['perpage'])

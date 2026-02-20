@@ -6,14 +6,13 @@ namespace JBSNewMedia\DDMBundle\Validator;
 
 class DDMStringValidator extends DDMValidator
 {
+    protected ?int $minLength = null;
+    protected ?int $maxLength = null;
+
     public function __construct()
     {
         $this->alias = 'string';
     }
-
-    protected int $priority = self::DEFAULT_PRIORITY;
-    protected ?int $minLength = null;
-    protected ?int $maxLength = null;
 
     public function getMinLength(): ?int
     {
