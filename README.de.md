@@ -17,9 +17,10 @@
 
 - **Zentrale Datendefinition** via DDM und DDMField
 - **Automatisierte Datatable-Engine** für serverseitige Verarbeitung (Sortierung, Suche, Pagination)
+- **Erweiterte Suchfunktion** via DDMDatatableSearchHandler
 - **Flexibler Form-Handler** für AJAX-basierte Formularverarbeitung und Validierung
 - **Attribut-basierte Feldkonfiguration** für einfache Integration in Entities
-- **Umfangreiche Validierung** (Required, String, Unique, etc.)
+- **Umfangreiche Validierung** (Required, String, Unique, Email, etc.)
 - **Twig-Integration** für einfaches Rendering von Formularen und Tabellen
 - **Nahtlose Integration** in das VIS-Ökosystem
 
@@ -47,7 +48,7 @@ composer require jbsnewmedia/ddm-bundle
 
 ### 1. Felder definieren
 
-Felder werden als Services definiert und können mit dem Attribut `#[DDMFieldAttribute]` konfiguriert werden, um sie bestimmten Entities oder Kontexten zuzuordnen.
+Felder werden als Services definiert und können mit dem Attribut `#[DDMFieldAttribute]` konfiguriert werden, um sie bestimmten Entities oder Kontexten zuzuordnen. In der `__construct`-Methode oder via Initialisierung können Feld-Eigenschaften wie Bezeichner, Name und Verhalten festgelegt werden.
 
 ```php
 use JBSNewMedia\DDMBundle\Attribute\DDMFieldAttribute;
@@ -109,25 +110,19 @@ public function list(Request $request, DDMFactory $ddmFactory, DDMDatatableEngin
 
 ### Formular verarbeiten
 
-Der `DDMDatatableFormHandler` automatisiert das Laden, Validieren und Speichern von Entities:
+Der `DDMDatatableFormHandler` automatisiert das Laden, Validieren und Speichern von Entities. Er gibt entweder ein gerendertes Formular oder eine JSON-Antwort zurück.
 
 ```php
 use JBSNewMedia\DDMBundle\Service\DDMDatatableFormHandler;
+use Symfony\Component\HttpFoundation\Response;
 
 public function edit(Request $request, User $user, DDMDatatableFormHandler $formHandler)
 {
     $ddm = $this->ddmFactory->create(User::class, 'edit');
     
-    $result = $formHandler->handle($request, $ddm, $user);
+    $response = $formHandler->handle($request, $ddm, $user);
     
-    if ($result instanceof Response) {
-        return $result; // Liefert das gerenderte Formular (HTML oder JSON-Fehler)
-    }
-    
-    if ($result['success']) {
-        $this->entityManager->flush();
-        return new JsonResponse(['success' => true]);
-    }
+    return $response;
 }
 ```
 
@@ -153,16 +148,21 @@ public function edit(Request $request, User $user, DDMDatatableFormHandler $form
 
 ```
 src/
-├── Attribute/        # PHP Attribute für die Feld-Konfiguration
+├── Attribute/           # PHP Attribute für die Feld-Konfiguration
+├── Contract/            # Interfaces für Felder, Validatoren und Werte
 ├── DependencyInjection/ # Bundle-Konfiguration & Extension
+├── Doctrine/            # Doctrine-spezifische Erweiterungen (z.B. CAST-Funktion)
 ├── Service/
 │   ├── DDM.php              # Zentrales Modell einer Datendefinition
 │   ├── DDMFactory.php       # Factory zum Erstellen von DDM-Instanzen
 │   ├── DDMField.php         # Basisklasse für alle Felder
 │   ├── DDMDatatableEngine.php # Engine für Datatable-Anfragen
-│   └── DDMDatatableFormHandler.php # Handler für Formular-Logik
-├── Validator/        # Standard-Validatoren (Required, String, etc.)
-└── DDMBundle.php     # Bundle-Klasse
+│   ├── DDMDatatableFormHandler.php # Handler für Formular-Logik
+│   └── DDMDatatableSearchHandler.php # Handler für die Datatable-Suche
+├── Trait/               # Gemeinsam genutzte Funktionalitäten (z.B. Entity-Zugriff)
+├── Validator/           # Validatoren (Required, String, Unique, Email, etc.)
+├── Value/               # Wert-Objekte (String, Array, etc.)
+└── DDMBundle.php        # Bundle-Klasse
 ```
 
 ---
