@@ -78,18 +78,37 @@
             showingFilteredEntries: (start, end, filtered, total) => languageSource.showingFilteredEntries.replace('{start}', start).replace('{end}', end).replace('{filtered}', filtered).replace('{total}', total)
         };
 
-        new AvalynxDataTable("avalynx-datatable", options, language);
+        const datatable = new AvalynxDataTable("avalynx-datatable", options, language);
+        window.avalynxDataTableInstance = datatable;
 
         window.addEventListener('message', function(event) {
             if (event.data && event.data.type === 'form-success') {
+                // Show success info via AvalynxAlert (no native alert)
+                try {
+                    const msg = (event.data.response && event.data.response.debug_msg) ? event.data.response.debug_msg : '';
+                    if (window.AvalynxAlert) {
+                        new AvalynxAlert(msg, 'success');
+                    }
+                } catch (e) {
+                    // ignore alert fallback intentionally
+                }
+
                 // Close all modals
-                const editModal = AvalynxModal.getInstance("edit-modal");
-                if (editModal) editModal.close();
-                const addModal = AvalynxModal.getInstance("add-modal");
-                if (addModal) addModal.close();
+                if (window.editModalInstance) {
+                    window.editModalInstance.close();
+                } else {
+                    const editModal = AvalynxModal.getInstance ? AvalynxModal.getInstance("edit-modal") : null;
+                    if (editModal) editModal.close();
+                }
+                if (window.addModalInstance) {
+                    window.addModalInstance.close();
+                } else {
+                    const addModal = AvalynxModal.getInstance ? AvalynxModal.getInstance("add-modal") : null;
+                    if (addModal) addModal.close();
+                }
 
                 // Refresh datatable
-                const datatable = AvalynxDataTable.getInstance("avalynx-datatable");
+                const datatable = window.avalynxDataTableInstance;
                 if (datatable) {
                     datatable.fetchData();
                 }
@@ -132,6 +151,7 @@
                         }
                     ]
                 });
+                window.addModalInstance = modal;
                 modal.open();
             }
 
@@ -165,6 +185,7 @@
                         }
                     ]
                 });
+                window.editModalInstance = modal;
                 modal.open();
             }
 
@@ -195,7 +216,7 @@
                                         .then(data => {
                                             if (data.success) {
                                                 // Refresh datatable
-                                                const datatable = AvalynxDataTable.getInstance("avalynx-datatable");
+                                                const datatable = window.avalynxDataTableInstance;
                                                 if (datatable) {
                                                     datatable.fetchData();
                                                 }
