@@ -155,6 +155,11 @@ class DDM
         return $this->title;
     }
 
+    public function getContext(): string
+    {
+        return $this->context;
+    }
+
     public function setTitle(?string $title): self
     {
         $this->title = $title;

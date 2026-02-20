@@ -13,8 +13,8 @@ abstract class DDMField
 {
     public const DEFAULT_PRIORITY = 100;
 
-    protected string $identifier;
-    protected string $name;
+    protected string $identifier = '';
+    protected string $name = '';
     protected ?DDMValue $valueHandler = null;
     protected int $order = 100;
     protected bool $livesearch = true;
