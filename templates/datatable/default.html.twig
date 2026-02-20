@@ -83,17 +83,14 @@
 
         window.addEventListener('message', function(event) {
             if (event.data && event.data.type === 'form-success') {
-                // Show success info via AvalynxAlert (no native alert)
                 try {
-                    const msg = (event.data.response && event.data.response.debug_msg) ? event.data.response.debug_msg : '';
-                    if (window.AvalynxAlert) {
-                        new AvalynxAlert(msg, 'success');
-                    }
+                    const msg = (event.data.response && event.data.response.message) ? event.data.response.message : '';
+                    const alertOptions = { duration: 5000, position: 'bottom-right' };
+                    new AvalynxAlert(msg, 'success', alertOptions);
                 } catch (e) {
-                    // ignore alert fallback intentionally
+                    console.error('DDM: Error showing AvalynxAlert', e);
                 }
 
-                // Close all modals
                 if (window.editModalInstance) {
                     window.editModalInstance.close();
                 } else {
@@ -107,7 +104,6 @@
                     if (addModal) addModal.close();
                 }
 
-                // Refresh datatable
                 const datatable = window.avalynxDataTableInstance;
                 if (datatable) {
                     datatable.fetchData();
@@ -215,7 +211,6 @@
                                         .then(response => response.json())
                                         .then(data => {
                                             if (data.success) {
-                                                // Refresh datatable
                                                 const datatable = window.avalynxDataTableInstance;
                                                 if (datatable) {
                                                     datatable.fetchData();
