@@ -101,7 +101,7 @@ class DDMDatatableFormHandler
 
             return new JsonResponse([
                 'success' => true,
-                'debug_msg' => $isNew ? $this->translator->trans('ddm.successCreate', [], 'datatable') : $this->translator->trans('ddm.successUpdate', [], 'datatable')
+                'message' => $isNew ? $this->translator->trans('ddm.successCreate', [], 'datatable') : $this->translator->trans('ddm.successUpdate', [], 'datatable')
             ]);
         }
 
