@@ -82,13 +82,13 @@ class DDMDatatableEngine
         if ('' !== $result['search']['value']) {
             $orX = $qb->expr()->orX();
             foreach ($fields as $field) {
-                if ($field->isLivesearch() && $field->getIdentifier() !== 'options') {
-                    $orX->add($qb->expr()->like($alias . '.' . $field->getIdentifier(), ':search'));
+                $searchExpression = $field->getSearchExpression($qb, $alias, $result['search']['value']);
+                if ($searchExpression) {
+                    $orX->add($searchExpression);
                 }
             }
             if ($orX->count() > 0) {
-                $qb->andWhere($orX)
-                    ->setParameter('search', '%' . $result['search']['value'] . '%');
+                $qb->andWhere($orX);
             }
         }
 

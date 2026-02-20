@@ -6,6 +6,7 @@ namespace JBSNewMedia\DDMBundle\Service;
 
 use JBSNewMedia\DDMBundle\Validator\DDMValidator;
 use JBSNewMedia\DDMBundle\Value\DDMStringValue;
+use Doctrine\ORM\QueryBuilder;
 use JBSNewMedia\DDMBundle\Value\DDMValue;
 
 abstract class DDMField
@@ -326,5 +327,17 @@ abstract class DDMField
     public function getDdm(): ?DDM
     {
         return $this->ddm;
+    }
+
+    public function getSearchExpression(QueryBuilder $qb, string $alias, string $search): ?object
+    {
+        if (!$this->isLivesearch() || $this->getIdentifier() === 'options') {
+            return null;
+        }
+
+        $paramName = 'search_' . str_replace('.', '_', $this->getIdentifier());
+        $qb->setParameter($paramName, '%' . $search . '%');
+
+        return $qb->expr()->like($alias . '.' . $this->getIdentifier(), ':' . $paramName);
     }
 }
