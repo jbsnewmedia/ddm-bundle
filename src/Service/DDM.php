@@ -6,6 +6,8 @@ namespace JBSNewMedia\DDMBundle\Service;
 
 use JBSNewMedia\DDMBundle\Attribute\DDMFieldAttribute;
 
+use Doctrine\ORM\EntityManagerInterface;
+
 class DDM
 {
     protected string $entityClass;
@@ -16,12 +18,15 @@ class DDM
     /** @var DDMField[] */
     protected iterable $fields = [];
     protected array $routes = [];
+    protected EntityManagerInterface $entityManager;
+    protected mixed $entity = null;
 
-    public function __construct(string $entityClass, string $context, iterable $fields)
+    public function __construct(string $entityClass, string $context, iterable $fields, EntityManagerInterface $entityManager)
     {
         $this->entityClass = $entityClass;
         $this->context = $context;
         $this->fields = $fields;
+        $this->entityManager = $entityManager;
         $this->loadFields();
     }
 
@@ -79,7 +84,7 @@ class DDM
         });
 
         foreach ($collectedFields as $field) {
-            $field->init($collectedFields);
+            $field->init($this, $collectedFields);
         }
 
         $this->fields = $collectedFields;
@@ -99,6 +104,31 @@ class DDM
     public function getEntityClass(): string
     {
         return $this->entityClass;
+    }
+
+    public function getEntityManager(): EntityManagerInterface
+    {
+        return $this->entityManager;
+    }
+
+    public function setEntity(mixed $entity): self
+    {
+        $this->entity = $entity;
+        return $this;
+    }
+
+    public function getEntity(): mixed
+    {
+        return $this->entity;
+    }
+
+    public function getEntityId(): mixed
+    {
+        $entity = $this->entity;
+        if ($entity && \is_object($entity) && method_exists($entity, 'getId')) {
+            return $entity->getId();
+        }
+        return null;
     }
 
     public function getRoutes(): array

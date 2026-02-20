@@ -19,7 +19,7 @@ class DDMEmailValidator extends DDMValidator
 
         if (!filter_var((string) $value, FILTER_VALIDATE_EMAIL)) {
             if ($this->errorMessage === null) {
-                $this->setErrorMessage('error.ddm.validator.email.invalid');
+                $this->setErrorMessage('email.invalid');
             }
             return false;
         }

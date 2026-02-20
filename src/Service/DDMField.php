@@ -28,6 +28,7 @@ abstract class DDMField
     /** @var DDMField[] */
     protected array $subFields = [];
     protected array $routes = [];
+    protected ?DDM $ddm = null;
 
     public function getIdentifier(): string
     {
@@ -210,6 +211,7 @@ abstract class DDMField
         if ($validator->getAlias()) {
             $this->removeValidator($validator->getAlias());
         }
+        $validator->setField($this);
         $this->validators[] = $validator;
         usort($this->validators, function (DDMValidator $a, DDMValidator $b) {
             return $b->getPriority() <=> $a->getPriority();
@@ -246,19 +248,25 @@ abstract class DDMField
         $this->errors = [];
         foreach ($this->validators as $validator) {
             if (!$validator->validate($value)) {
-                $this->errors[] = $validator->getErrorMessage();
+                $domain = 'ddm_validator_' . ($validator->getAlias() ?? 'default');
+                $this->errors[] = [
+                    'message' => $validator->getErrorMessage(),
+                    'parameters' => $validator->getErrorMessageParameters(),
+                    'domain' => $domain
+                ];
                 return false;
             }
         }
         return true;
     }
 
+
     public function getErrors(): array
     {
         return $this->errors;
     }
 
-    public function getError(): ?string
+    public function getError(): ?array
     {
         return $this->errors[0] ?? null;
     }
@@ -301,8 +309,9 @@ abstract class DDMField
     /**
      * @param iterable<DDMField> $allFields
      */
-    public function init(iterable $allFields): void
+    public function init(DDM $ddm, iterable $allFields): void
     {
+        $this->ddm = $ddm;
     }
 
     public function prepareValue(mixed $value): mixed
@@ -313,5 +322,9 @@ abstract class DDMField
     public function finalizeValue(mixed $value): mixed
     {
         return $value;
+    }
+    public function getDdm(): ?DDM
+    {
+        return $this->ddm;
     }
 }

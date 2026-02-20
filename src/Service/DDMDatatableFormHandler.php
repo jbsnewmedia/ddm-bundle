@@ -46,15 +46,19 @@ class DDMDatatableFormHandler
             $valid = [];
             $translationDomain = $options['translation_domain'] ?? null;
 
+            $ddm->setEntity($entity);
+
             foreach ($ddm->getFields() as $field) {
                 if (!$field->isRenderInForm()) {
                     continue;
                 }
+
                 $value = $request->request->all()[$field->getIdentifier()] ?? null;
                 $error = null;
 
                 if (!$field->validate($value)) {
-                    $error = $field->getError() ?? $this->translator->trans('ddm.fieldInvalid', ['{field}' => $this->translator->trans($field->getName(), [], $translationDomain)], 'datatable');
+                    $fieldError = $field->getError();
+                    $error = $this->translator->trans($fieldError['message'], $fieldError['parameters'] ?? [], $fieldError['domain']);
                 }
 
                 if ($error) {
