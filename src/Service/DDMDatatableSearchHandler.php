@@ -60,7 +60,7 @@ class DDMDatatableSearchHandler
 
         $fields = [];
         foreach ($ddm->getFields() as $field) {
-            if (!$field->isExtendsearch()) {
+            if (!$field->isExtendsearch() || !$field->isRenderSearch()) {
                 continue;
             }
             if (isset($searchData[$field->getIdentifier()])) {

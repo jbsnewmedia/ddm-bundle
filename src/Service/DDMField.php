@@ -22,6 +22,7 @@ abstract class DDMField
     protected bool $sortable = true;
     protected bool $renderInForm = true;
     protected bool $renderInTable = true;
+    protected bool $renderSearch = true;
     protected string $template = '@DDM/fields/text.html.twig';
     /** @var DDMValidator[] */
     protected array $validators = [];
@@ -193,6 +194,17 @@ abstract class DDMField
     public function setRenderInTable(bool $renderInTable): self
     {
         $this->renderInTable = $renderInTable;
+        return $this;
+    }
+
+    public function isRenderSearch(): bool
+    {
+        return $this->renderSearch;
+    }
+
+    public function setRenderSearch(bool $renderSearch): self
+    {
+        $this->renderSearch = $renderSearch;
         return $this;
     }
 
