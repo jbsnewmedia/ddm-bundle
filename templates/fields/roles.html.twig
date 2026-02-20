@@ -4,7 +4,7 @@
         {% set selected = field.value is iterable ? field.value : [] %}
         {% for key, label in field.availableRoles %}
             <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="{{ field.identifier }}_{{ loop.index }}" name="{{ field.identifier }}[]" value="{{ key }}" {% if key in selected %}checked{% endif %}>
+                <input class="form-check-input" type="checkbox" id="{{ field.identifier }}_{{ loop.index }}" name="{{ field.identifier }}[]" value="{{ key }}" {% if key in selected %}checked{% endif %} {% if key == 'ROLE_USER' %}disabled{% endif %}>
                 <label class="form-check-label" for="{{ field.identifier }}_{{ loop.index }}">{{ label }}</label>
             </div>
         {% endfor %}
