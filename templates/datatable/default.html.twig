@@ -22,6 +22,10 @@
     modalEditTitle: 'ddm.modalEditTitle'|vistrans([], 'datatable'),
     modalDeleteTitle: 'ddm.modalDeleteTitle'|vistrans([], 'datatable'),
     modalDeleteContent: 'ddm.modalDeleteContent'|vistrans([], 'datatable'),
+    modalSearchTitle: 'ddm.modalSearchTitle'|vistrans([], 'datatable'),
+    modalSearchLabel: 'ddm.modalSearchLabel'|vistrans([], 'datatable'),
+    modalSearchChangeLabel: 'ddm.modalSearchChangeLabel'|vistrans([], 'datatable'),
+    modalSearchResetLabel: 'ddm.modalSearchResetLabel'|vistrans([], 'datatable'),
     errorDelete: 'ddm.errorDelete'|vistrans([], 'datatable'),
     errorDeleteUnknown: 'ddm.errorDeleteUnknown'|vistrans([], 'datatable'),
     confirmDeleteSimulation: 'ddm.confirmDeleteSimulation'|vistrans([], 'datatable')
@@ -29,11 +33,18 @@
 <div class="card shadow">
     <div class="card-header d-flex justify-content-between align-items-center">
         <div>{{ datatable_title }}</div>
-        {% if options.add_url|default(false) %}
-            <button class="btn btn-sm btn-success btn-add-new-user" data-url="{{ options.add_url }}">
-                <i class="fas fa-plus"></i> {{ options.add_label|default('ddm.modalAddTitle'|vistrans([], 'datatable')) }}
-            </button>
-        {% endif %}
+        <div class="d-flex gap-2">
+            {% if options.add_url|default(false) %}
+                <button class="btn btn-sm btn-success btn-add-new-user" data-url="{{ options.add_url }}">
+                    <i class="fas fa-plus"></i> {{ options.add_label|default('ddm.modalAddTitle'|vistrans([], 'datatable')) }}
+                </button>
+            {% endif %}
+            {% if options.search_url|default(false) %}
+                <button class="btn btn-sm btn-primary btn-extend-search" data-url="{{ options.search_url }}">
+                    <i class="fas fa-search"></i> <span class="btn-extend-search-label">{{ options.search_label|default('ddm.modalSearchTitle'|vistrans([], 'datatable')) }}</span>
+                </button>
+            {% endif %}
+        </div>
     </div>
     <div class="card-body">
         <div id="avalynx-datatable"
@@ -46,6 +57,7 @@
 <div id="edit-modal"></div>
 <div id="add-modal"></div>
 <div id="delete-modal"></div>
+<div id="search-modal"></div>
 
 <style>
     .avalynx-modal .modal-body {
@@ -61,6 +73,11 @@
     }
     .modal-body-content {
         padding: 1rem;
+    }
+    .btn-extend-search.active {
+        background-color: var(--bs-warning);
+        border-color: var(--bs-warning);
+        color: #000;
     }
 </style>
 
@@ -81,12 +98,48 @@
         const datatable = new AvalynxDataTable("avalynx-datatable", options, language);
         window.avalynxDataTableInstance = datatable;
 
+        const originalFetchData = datatable.fetchData.bind(datatable);
+        datatable.fetchData = function() {
+            this.options.apiParams = this.options.apiParams || {};
+            // Clean up old search fields from apiParams
+            for (const key in this.options.apiParams) {
+                if (key.startsWith('search_fields[')) {
+                    delete this.options.apiParams[key];
+                }
+            }
+            // Add current search fields
+            if (this.options.search_fields) {
+                for (const [key, value] of Object.entries(this.options.search_fields)) {
+                    this.options.apiParams['search_fields[' + key + ']'] = value;
+                }
+            }
+            return originalFetchData();
+        };
+
+        const updateSearchButtonLabel = () => {
+            const searchFields = datatable.options.search_fields || {};
+            const btnLabel = document.querySelector('.btn-extend-search-label');
+            const btn = document.querySelector('.btn-extend-search');
+            if (btnLabel) {
+                if (Object.keys(searchFields).length > 0) {
+                    btnLabel.innerText = languageSource.modalSearchChangeLabel;
+                    if (btn) btn.classList.add('active');
+                } else {
+                    btnLabel.innerText = languageSource.modalSearchLabel || languageSource.modalSearchTitle;
+                    if (btn) btn.classList.remove('active');
+                }
+            }
+        };
+        updateSearchButtonLabel();
+
         window.addEventListener('message', function(event) {
             if (event.data && event.data.type === 'form-success') {
                 try {
                     const msg = (event.data.response && event.data.response.message) ? event.data.response.message : '';
-                    const alertOptions = { duration: 5000, position: 'bottom-right' };
-                    new AvalynxAlert(msg, 'success', alertOptions);
+                    if (msg) {
+                        const alertOptions = { duration: 5000, position: 'bottom-right' };
+                        new AvalynxAlert(msg, 'success', alertOptions);
+                    }
                 } catch (e) {
                     console.error('DDM: Error showing AvalynxAlert', e);
                 }
@@ -102,6 +155,16 @@
                 } else {
                     const addModal = AvalynxModal.getInstance ? AvalynxModal.getInstance("add-modal") : null;
                     if (addModal) addModal.close();
+                }
+                if (window.searchModalInstance) {
+                    window.searchModalInstance.close();
+
+                    const searchFields = event.data.response.search_fields || {};
+                    const datatable = window.avalynxDataTableInstance;
+                    if (datatable) {
+                        datatable.options.search_fields = searchFields;
+                        updateSearchButtonLabel();
+                    }
                 }
 
                 const datatable = window.avalynxDataTableInstance;
@@ -148,6 +211,50 @@
                     ]
                 });
                 window.addModalInstance = modal;
+                modal.open();
+            }
+
+            const btnExtendSearch = e.target.closest('.btn-extend-search');
+            if (btnExtendSearch) {
+                const searchUrl = btnExtendSearch.dataset.url;
+
+                const modal = new AvalynxModal("search-modal", {
+                    title: languageSource.modalSearchTitle,
+                    body: '<iframe id="modal-iframe" src="' + searchUrl + '"></iframe>',
+                    bodyIsHtml: true,
+                    buttons: [
+                        {
+                            label: languageSource.modalCancelLabel,
+                            class: 'btn btn-secondary',
+                            onClick: function() {
+                                modal.close();
+                            }
+                        },
+                        {
+                            label: languageSource.modalSearchResetLabel,
+                            class: 'btn btn-warning',
+                            onClick: function() {
+                                const iframe = document.getElementById('modal-iframe');
+                                if (iframe && iframe.contentWindow) {
+                                    this.disabled = true;
+                                    iframe.contentWindow.postMessage({ type: 'reset-search' }, '*');
+                                }
+                            }
+                        },
+                        {
+                            label: languageSource.modalSearchLabel || languageSource.modalSearchTitle,
+                            class: 'btn btn-primary',
+                            onClick: function() {
+                                const iframe = document.getElementById('modal-iframe');
+                                if (iframe && iframe.contentWindow) {
+                                    this.disabled = true;
+                                    iframe.contentWindow.postMessage('submit-form', '*');
+                                }
+                            }
+                        }
+                    ]
+                });
+                window.searchModalInstance = modal;
                 modal.open();
             }
 

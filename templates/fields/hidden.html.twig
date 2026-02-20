@@ -1,1 +1,3 @@
-<input type="hidden" name="{{ field.identifier }}" id="{{ field.identifier }}" value="{{ field.value }}" />
+{% set field_id = options.override_id|default(field.getIdentifier()) %}
+{% set field_name = options.override_identifier|default(field.getIdentifier()) %}
+<input type="hidden" name="{{ field_name }}" id="{{ field_id }}" value="{{ field.getValueForm() }}" />

@@ -23,3 +23,7 @@ ddm:
   errorDelete: "Error during deletion: {error}"
   errorDeleteUnknown: "Unknown error during deletion"
   confirmDeleteSimulation: "Entry {id} deleted (simulation)"
+  modalSearchTitle: "Extended Search"
+  modalSearchLabel: "Extended Search"
+  modalSearchChangeLabel: "Change Search"
+  modalSearchResetLabel: "Reset Search"

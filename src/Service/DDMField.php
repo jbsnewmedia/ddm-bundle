@@ -335,7 +335,7 @@ abstract class DDMField
             return null;
         }
 
-        $paramName = 'search_' . str_replace('.', '_', $this->getIdentifier());
+        $paramName = 'search_' . str_replace('.', '_', $this->getIdentifier() . '_' . uniqid());
         $qb->setParameter($paramName, '%' . $search . '%');
 
         return $qb->expr()->like($alias . '.' . $this->getIdentifier(), ':' . $paramName);

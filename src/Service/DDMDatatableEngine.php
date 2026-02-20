@@ -73,15 +73,26 @@ class DDMDatatableEngine
         $result['page'] = $params->getInt('page', 1);
         $result['perpage'] = $params->getInt('perpage', 10);
         $result['searchisnew'] = $params->getBoolean('searchisnew', false);
+        $result['search_fields'] = $params->all()['search_fields'] ?? [];
+
+        // Clean empty values from search_fields
+        foreach ($result['search_fields'] as $key => $value) {
+            if ($value === null || $value === '' || (is_array($value) && empty($value))) {
+                unset($result['search_fields'][$key]);
+            }
+        }
 
         if ($result['searchisnew']) {
             $result['page'] = 1;
         }
 
-        // Search
+        // Global Search
         if ('' !== $result['search']['value']) {
             $orX = $qb->expr()->orX();
             foreach ($fields as $field) {
+                if ($field->getIdentifier() === 'options') {
+                    continue;
+                }
                 $searchExpression = $field->getSearchExpression($qb, $alias, $result['search']['value']);
                 if ($searchExpression) {
                     $orX->add($searchExpression);
@@ -89,6 +100,24 @@ class DDMDatatableEngine
             }
             if ($orX->count() > 0) {
                 $qb->andWhere($orX);
+            }
+        }
+
+        // Extended Search
+        if (!empty($result['search_fields'])) {
+            foreach ($result['search_fields'] as $fieldIdentifier => $searchValue) {
+                if ($searchValue === null || $searchValue === '') {
+                    continue;
+                }
+                foreach ($fields as $field) {
+                    if ($field->getIdentifier() === $fieldIdentifier && $field->isExtendsearch()) {
+                        $expressionValue = is_array($searchValue) ? implode(',', $searchValue) : (string) $searchValue;
+                        $searchExpression = $field->getSearchExpression($qb, $alias, $expressionValue);
+                        if ($searchExpression) {
+                            $qb->andWhere($searchExpression);
+                        }
+                    }
+                }
             }
         }
 
