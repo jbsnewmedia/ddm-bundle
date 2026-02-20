@@ -45,7 +45,7 @@ class DDMStringValidator extends DDMValidator
 
     public function validate(mixed $value): bool
     {
-        $stringValue = is_scalar($value) || null === $value ? (string) $value : '';
+        $stringValue = is_scalar($value) || (is_object($value) && method_exists($value, '__toString')) || null === $value ? (string) $value : '';
         $length = mb_strlen($stringValue);
 
         if (null !== $this->minLength && $length < $this->minLength) {

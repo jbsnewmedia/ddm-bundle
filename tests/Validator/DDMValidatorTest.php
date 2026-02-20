@@ -4,40 +4,40 @@ declare(strict_types=1);
 
 namespace JBSNewMedia\DDMBundle\Tests\Validator;
 
+use JBSNewMedia\DDMBundle\Service\DDMField;
 use JBSNewMedia\DDMBundle\Validator\DDMValidator;
 use PHPUnit\Framework\TestCase;
 
 final class DDMValidatorTest extends TestCase
 {
-    private DDMValidator $validator;
-
-    protected function setUp(): void
+    public function testBaseGettersSetters(): void
     {
-        $this->validator = new class extends DDMValidator {
-            public function validate(mixed $value): bool
-            {
-                return true;
-            }
+        $validator = new class extends DDMValidator {
+            public function validate(mixed $value): bool { return true; }
         };
-    }
 
-    public function testDefaultValues(): void
-    {
-        $this->assertNull($this->validator->getErrorMessage());
-        $this->assertNull($this->validator->getAlias());
-        $this->assertSame(100, $this->validator->getPriority());
-        $this->assertFalse($this->validator->isRequired());
-    }
+        // Defaults
+        $this->assertNull($validator->getErrorMessage());
+        $this->assertSame([], $validator->getErrorMessageParameters());
+        $this->assertNull($validator->getAlias());
+        $this->assertSame(DDMValidator::DEFAULT_PRIORITY, $validator->getPriority());
+        $this->assertFalse($validator->isRequired());
+        $this->assertNull($validator->getField());
 
-    public function testSettersAndGetters(): void
-    {
-        $this->validator->setErrorMessage('Custom Error');
-        $this->assertSame('Custom Error', $this->validator->getErrorMessage());
+        // Setters
+        $validator->setErrorMessage('msg');
+        $validator->setErrorMessageParameters(['{a}' => 'b']);
+        $validator->setAlias('alias');
+        $validator->setPriority(200);
 
-        $this->validator->setAlias('custom_alias');
-        $this->assertSame('custom_alias', $this->validator->getAlias());
+        $field = new class extends DDMField {};
+        $validator->setField($field);
 
-        $this->validator->setPriority(200);
-        $this->assertSame(200, $this->validator->getPriority());
+        // Assertions
+        $this->assertSame('msg', $validator->getErrorMessage());
+        $this->assertSame(['{a}' => 'b'], $validator->getErrorMessageParameters());
+        $this->assertSame('alias', $validator->getAlias());
+        $this->assertSame(200, $validator->getPriority());
+        $this->assertSame($field, $validator->getField());
     }
 }

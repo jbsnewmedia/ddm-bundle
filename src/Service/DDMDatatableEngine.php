@@ -70,9 +70,8 @@ class DDMDatatableEngine
         /** @var array<string, mixed> $searchFields */
         $searchFields = $params->all()['search_fields'] ?? [];
 
-        // Remove empty values from search_fields
         foreach ($searchFields as $key => $value) {
-            if (null === $value || '' === $value || (is_array($value) && [] === $value)) {
+            if (null === $value || (is_array($value) && [] === $value)) {
                 unset($searchFields[$key]);
             }
         }
@@ -81,7 +80,6 @@ class DDMDatatableEngine
             $page = 1;
         }
 
-        // Global search
         if ('' !== $search) {
             $orX = $qb->expr()->orX();
             foreach ($fields as $field) {
@@ -98,7 +96,6 @@ class DDMDatatableEngine
             }
         }
 
-        // Extended search (per-field)
         if ([] !== $searchFields) {
             foreach ($searchFields as $fieldIdentifier => $searchValue) {
                 if (null === $searchValue || '' === $searchValue) {
@@ -121,7 +118,6 @@ class DDMDatatableEngine
             }
         }
 
-        // Count total (unfiltered) and filtered
         $countQb = clone $qb;
         /** @var class-string<object> $entityClass */
         $classMetadata = $this->entityManager->getClassMetadata($entityClass);
@@ -139,12 +135,10 @@ class DDMDatatableEngine
             ->getQuery()
             ->getSingleScalarResult();
 
-        // Sorting
         foreach ($sorting as $key => $sort) {
             $qb->addOrderBy($alias.'.'.$key, $sort);
         }
 
-        // Pagination
         $maxPage = max(1, (int) ceil($totalFiltered / $perpage));
         $page = (int) max(1, min($page, $maxPage));
 

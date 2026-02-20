@@ -38,7 +38,7 @@ final class DDMStringValidatorTest extends TestCase
     {
         $this->validator->setMinLength(5);
         $this->assertFalse($this->validator->validate('1234'));
-        $this->assertSame('error.ddm.validator.string.min_length', $this->validator->getErrorMessage());
+        $this->assertSame('string.min_length', $this->validator->getErrorMessage());
         $this->assertTrue($this->validator->validate('12345'));
     }
 
@@ -46,7 +46,7 @@ final class DDMStringValidatorTest extends TestCase
     {
         $this->validator->setMaxLength(5);
         $this->assertFalse($this->validator->validate('123456'));
-        $this->assertSame('error.ddm.validator.string.max_length', $this->validator->getErrorMessage());
+        $this->assertSame('string.max_length', $this->validator->getErrorMessage());
         $this->assertTrue($this->validator->validate('12345'));
     }
 

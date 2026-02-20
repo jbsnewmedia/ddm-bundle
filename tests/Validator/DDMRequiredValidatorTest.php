@@ -24,20 +24,20 @@ final class DDMRequiredValidatorTest extends TestCase
     public function testValidateWithNull(): void
     {
         $this->assertFalse($this->validator->validate(null));
-        $this->assertSame('error.ddm.validator.required', $this->validator->getErrorMessage());
+        $this->assertSame('required', $this->validator->getErrorMessage());
     }
 
     public function testValidateWithEmptyString(): void
     {
         $this->assertFalse($this->validator->validate(''));
         $this->assertFalse($this->validator->validate('   '));
-        $this->assertSame('error.ddm.validator.required', $this->validator->getErrorMessage());
+        $this->assertSame('required', $this->validator->getErrorMessage());
     }
 
     public function testValidateWithEmptyArray(): void
     {
         $this->assertFalse($this->validator->validate([]));
-        $this->assertSame('error.ddm.validator.required', $this->validator->getErrorMessage());
+        $this->assertSame('required', $this->validator->getErrorMessage());
     }
 
     public function testValidateWithValidValue(): void

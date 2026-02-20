@@ -71,7 +71,6 @@ class DDM
     {
         $collectedFields = [];
 
-        // Build short name once – avoids repeated ReflectionClass construction inside the loop
         $entityShortName = strtolower((new \ReflectionClass($this->entityClass))->getShortName());
 
         foreach ($this->fields as $field) {

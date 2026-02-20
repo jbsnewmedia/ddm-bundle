@@ -45,7 +45,6 @@ class DDMDatatableFormHandler
             $template = $ddm->getFormTemplate() ?? '@DDM/vis/form.html.twig';
         }
 
-        // Preload entity values into fields for GET display
         if (null !== $entity && !$preload) {
             foreach ($ddm->getFields() as $field) {
                 if (!$field->isRenderInForm()) {

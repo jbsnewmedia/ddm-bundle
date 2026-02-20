@@ -37,7 +37,6 @@ class DDMDatatableSearchHandler
             /** @var array<string, mixed> $searchFields */
             $searchFields = $request->request->all()['search_fields'] ?? [];
 
-            // Remove empty values
             foreach ($searchFields as $key => $value) {
                 if (null === $value || '' === $value || (is_array($value) && [] === $value)) {
                     unset($searchFields[$key]);

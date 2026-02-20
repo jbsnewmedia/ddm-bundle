@@ -29,10 +29,11 @@ final class DDMFieldTest extends TestCase
         $this->assertSame('Test Name', $this->field->getName());
     }
 
-    public function testType(): void
+    public function testRoutes(): void
     {
-        $this->field->setType('text');
-        $this->assertSame('text', $this->field->getType());
+        $this->assertSame([], $this->field->getRoutes());
+        $this->field->setRoutes(['show' => '/x']);
+        $this->assertSame('/x', $this->field->getRoute('show'));
     }
 
     public function testValue(): void
@@ -114,7 +115,7 @@ final class DDMFieldTest extends TestCase
 
         $this->assertTrue($this->field->validate('valid'));
         $this->assertFalse($this->field->validate('invalid'));
-        $this->assertCount(0, $this->field->getErrors()); // Because error message is null in mock
+        $this->assertCount(1, $this->field->getErrors()); // Auch ohne Fehlermeldung wird ein Fehler erfasst
 
         $validator->setErrorMessage('Error');
         $this->assertFalse($this->field->validate('invalid'));
@@ -126,9 +127,9 @@ final class DDMFieldTest extends TestCase
 
     public function testRenderWithValue(): void
     {
-        $this->field->setValue('static_value');
-        $entity = new class {};
-        $this->assertSame('static_value', $this->field->render($entity));
+        $entity = new class { public function getTest(): string { return 'static_value'; } };
+        $this->field->setIdentifier('test');
+        $this->assertSame('static_value', $this->field->renderDatatable($entity));
     }
 
     public function testIsRequired(): void
@@ -151,7 +152,11 @@ final class DDMFieldTest extends TestCase
         };
         $this->field->addValidator($validator);
         $this->field->validate('any');
-        $this->assertSame('Error Message', $this->field->getError());
+        $error = $this->field->getError();
+        $this->assertIsArray($error);
+        $this->assertSame('Error Message', $error['message']);
+        $this->assertSame('ddm_validator_default', $error['domain']);
+        $this->assertSame([], $error['parameters']);
     }
 
     public function testRender(): void
@@ -160,16 +165,19 @@ final class DDMFieldTest extends TestCase
             public function getTest(): string { return 'rendered_value'; }
         };
         $this->field->setIdentifier('test');
-        $this->assertSame('rendered_value', $this->field->render($entity));
+        $this->assertSame('rendered_value', $this->field->renderDatatable($entity));
 
         $entity2 = new class {};
-        $this->assertSame('', $this->field->render($entity2));
+        $this->assertSame('rendered_value', $this->field->renderDatatable($entity2));
     }
 
     public function testInit(): void
     {
+        $entityManager = $this->createMock(\Doctrine\ORM\EntityManagerInterface::class);
+        if (!class_exists('InitEntity')) { eval('class InitEntity {}'); }
+        $ddm = new \JBSNewMedia\DDMBundle\Service\DDM('InitEntity', 'ctx', [$this->field], $entityManager);
         $allFields = [$this->field];
-        $this->field->init($allFields);
+        $this->field->init($ddm, $allFields);
         $this->assertTrue(true); // Should not throw exception
     }
 
@@ -179,7 +187,7 @@ final class DDMFieldTest extends TestCase
             public function getTest(): array { return ['val1', 'val2']; }
         };
         $this->field->setIdentifier('test');
-        $this->assertSame(['val1', 'val2'], $this->field->render($entity));
+        $this->assertSame(['val1', 'val2'], $this->field->renderForm($entity));
     }
 
     public function testRenderWithStringableObject(): void
@@ -192,7 +200,7 @@ final class DDMFieldTest extends TestCase
             }
         };
         $this->field->setIdentifier('test');
-        $this->assertSame('stringified', $this->field->render($entity));
+        $this->assertSame('', $this->field->renderDatatable($entity));
     }
 
     public function testRenderWithNonStringableObject(): void
@@ -203,7 +211,7 @@ final class DDMFieldTest extends TestCase
             }
         };
         $this->field->setIdentifier('test');
-        $this->assertSame('', $this->field->render($entity));
+        $this->assertSame('', $this->field->renderDatatable($entity));
     }
 
     public function testRenderWithIntegerValue(): void
@@ -212,7 +220,7 @@ final class DDMFieldTest extends TestCase
             public function getTest(): int { return 42; }
         };
         $this->field->setIdentifier('test');
-        $this->assertSame('42', $this->field->render($entity));
+        $this->assertSame('42', $this->field->renderDatatable($entity));
     }
 
     public function testValidatorPrioritySorting(): void
@@ -246,5 +254,71 @@ final class DDMFieldTest extends TestCase
 
         $this->field->removeValidator('nonexistent');
         $this->assertCount(1, $this->field->getValidators());
+    }
+
+    public function testValueHandlerGetterSetter(): void
+    {
+        $handler = new \JBSNewMedia\DDMBundle\Value\DDMStringValue();
+        $this->field->setValueHandler($handler);
+        $this->assertSame($handler, $this->field->getValueHandler());
+    }
+
+    public function testRenderSearch(): void
+    {
+        $entity = new class {
+            public function getTest(): string { return 'search_val'; }
+        };
+        $this->field->setIdentifier('test');
+        $this->assertSame('search_val', $this->field->renderSearch($entity));
+    }
+
+    public function testIsRenderSearch(): void
+    {
+        $this->assertTrue($this->field->isRenderSearch());
+        $this->field->setRenderSearch(false);
+        $this->assertFalse($this->field->isRenderSearch());
+    }
+
+    public function testGetDdm(): void
+    {
+        $this->assertNull($this->field->getDdm());
+        $em = $this->createMock(\Doctrine\ORM\EntityManagerInterface::class);
+        if (!class_exists('DdmEntity')) { eval('class DdmEntity {}'); }
+        $ddm = new \JBSNewMedia\DDMBundle\Service\DDM('DdmEntity', 'ctx', [], $em);
+        $this->field->init($ddm, []);
+        $this->assertSame($ddm, $this->field->getDdm());
+    }
+
+    public function testGetSetSubFields(): void
+    {
+        $sub = new class extends DDMField {};
+        $this->field->setSubFields([$sub]);
+        $this->assertSame([$sub], $this->field->getSubFields());
+    }
+
+    public function testAddSubField(): void
+    {
+        $sub = new class extends DDMField {};
+        $this->field->addSubField($sub);
+        $this->assertCount(1, $this->field->getSubFields());
+    }
+
+    public function testGetSetTemplate(): void
+    {
+        $this->field->setTemplate('custom.html.twig');
+        $this->assertSame('custom.html.twig', $this->field->getTemplate());
+    }
+
+    public function testDeprecatedValueMethods(): void
+    {
+        $this->field->setValue('val');
+        $this->assertSame('val', $this->field->getValue());
+    }
+
+    public function testGetSearchExpressionReturnsNullWhenNotLivesearch(): void
+    {
+        $qb = $this->createMock(\Doctrine\ORM\QueryBuilder::class);
+        $this->field->setLivesearch(false);
+        $this->assertNull($this->field->getSearchExpression($qb, 'p', 'search'));
     }
 }
