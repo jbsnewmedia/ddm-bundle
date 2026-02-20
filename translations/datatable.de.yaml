@@ -23,3 +23,7 @@ ddm:
   errorDelete: "Fehler beim Löschen: {error}"
   errorDeleteUnknown: "Unbekannter Fehler beim Löschen"
   confirmDeleteSimulation: "Eintrag {id} gelöscht (Simulation)"
+  modalSearchTitle: "Erweiterte Suche"
+  modalSearchLabel: "Erweiterte Suchen"
+  modalSearchChangeLabel: "Suche anpassen"
+  modalSearchResetLabel: "Suche zurücksetzen"

@@ -21,6 +21,18 @@ class DDMExtension extends Extension implements PrependExtensionInterface
                 ],
             ]);
         }
+
+        if (isset($container->getExtensions()['doctrine'])) {
+            $container->prependExtensionConfig('doctrine', [
+                'orm' => [
+                    'dql' => [
+                        'string_functions' => [
+                            'CAST' => \JBSNewMedia\DDMBundle\Doctrine\ORM\Query\AST\Functions\Cast::class,
+                        ],
+                    ],
+                ],
+            ]);
+        }
     }
 
     public function load(array $configs, ContainerBuilder $container): void

@@ -13,18 +13,22 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 class DDMDatatableEngine
 {
     public function __construct(
-        protected TranslatorInterface $translator,
-        protected EntityManagerInterface $entityManager,
+        private readonly TranslatorInterface $translator,
+        private readonly EntityManagerInterface $entityManager,
     ) {
     }
 
-    public function handleRequest(Request $request, DDM $ddm, ?QueryBuilder $qb = null, ?string $translationDomain = null): JsonResponse
-    {
+    public function handleRequest(
+        Request $request,
+        DDM $ddm,
+        ?QueryBuilder $qb = null,
+        ?string $translationDomain = null,
+    ): JsonResponse {
         $fields = $ddm->getFields();
-        $entityClass = $ddm->getEntityClass();
         /** @var class-string<object> $entityClass */
+        $entityClass = $ddm->getEntityClass();
         $repository = $this->entityManager->getRepository($entityClass);
-        $alias = 'p'; // Default alias, should probably be more dynamic or passed in
+        $alias = 'p';
 
         if (null === $qb) {
             $qb = $repository->createQueryBuilder($alias);
@@ -35,9 +39,7 @@ class DDMDatatableEngine
             }
         }
 
-        $result = [];
-        $result['head'] = [];
-        $result['head']['columns'] = [];
+        $headColumns = [];
         foreach ($fields as $field) {
             if (!$field->isRenderInTable()) {
                 continue;
@@ -47,112 +49,140 @@ class DDMDatatableEngine
                 'sortable' => $field->isSortable(),
                 'id' => $field->getIdentifier(),
             ];
-            if ('options' === $field->getIdentifier()) {
+            if (DDMField::IDENTIFIER_OPTIONS === $field->getIdentifier()) {
                 $column['raw'] = true;
                 $column['class'] = 'avalynx-datatable-options';
             }
-            $result['head']['columns'][] = $column;
+            $headColumns[] = $column;
         }
 
         $params = $request->isMethod('POST') ? $request->request : $request->query;
 
-        $result['search'] = ['value' => ''];
-        if ($params->has('sorting')) {
-            $sorting = json_decode((string) $params->get('sorting'), true);
-            if (is_array($sorting)) {
-                $result['sorting'] = $sorting;
-            } else {
-                $result['sorting'] = [];
+        $sortingRaw = json_decode((string) $params->get('sorting', '[]'), true);
+        /** @var array<string, string> $sorting */
+        $sorting = is_array($sortingRaw) ? $sortingRaw : [];
+
+        $search = $params->has('search') ? (string) $params->get('search') : '';
+        $page = $params->getInt('page', 1);
+        $perpage = $params->getInt('perpage', 10);
+        $searchIsNew = $params->getBoolean('searchisnew', false);
+
+        /** @var array<string, mixed> $searchFields */
+        $searchFields = $params->all()['search_fields'] ?? [];
+
+        // Remove empty values from search_fields
+        foreach ($searchFields as $key => $value) {
+            if (null === $value || '' === $value || (is_array($value) && [] === $value)) {
+                unset($searchFields[$key]);
             }
-        } else {
-            $result['sorting'] = [];
         }
 
-        if ($params->has('search')) {
-            $result['search']['value'] = (string) $params->get('search');
+        if ($searchIsNew) {
+            $page = 1;
         }
 
-        $result['page'] = $params->getInt('page', 1);
-        $result['perpage'] = $params->getInt('perpage', 10);
-        $result['searchisnew'] = $params->getBoolean('searchisnew', false);
-
-        if ($result['searchisnew']) {
-            $result['page'] = 1;
-        }
-
-        // Search
-        if ('' !== $result['search']['value']) {
+        // Global search
+        if ('' !== $search) {
             $orX = $qb->expr()->orX();
             foreach ($fields as $field) {
-                if ($field->isLivesearch() && 'options' !== $field->getIdentifier()) {
-                    $orX->add($qb->expr()->like($alias.'.'.$field->getIdentifier(), ':search'));
+                if (DDMField::IDENTIFIER_OPTIONS === $field->getIdentifier()) {
+                    continue;
+                }
+                $searchExpression = $field->getSearchExpression($qb, $alias, $search);
+                if (null !== $searchExpression) {
+                    $orX->add($searchExpression);
                 }
             }
             if ($orX->count() > 0) {
-                $qb->andWhere($orX)
-                    ->setParameter('search', '%'.$result['search']['value'].'%');
+                $qb->andWhere($orX);
             }
         }
 
-        // Count filtered
+        // Extended search (per-field)
+        if ([] !== $searchFields) {
+            foreach ($searchFields as $fieldIdentifier => $searchValue) {
+                if (null === $searchValue || '' === $searchValue) {
+                    continue;
+                }
+                foreach ($fields as $field) {
+                    if ($field->getIdentifier() === $fieldIdentifier && $field->isExtendsearch()) {
+                        $expressionValue = is_array($searchValue)
+                            ? implode(',', array_map(
+                                static fn (mixed $v): string => is_scalar($v) || null === $v ? (string) $v : '',
+                                $searchValue
+                            ))
+                            : (is_scalar($searchValue) ? (string) $searchValue : '');
+                        $searchExpression = $field->getSearchExpression($qb, $alias, $expressionValue);
+                        if (null !== $searchExpression) {
+                            $qb->andWhere($searchExpression);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Count total (unfiltered) and filtered
         $countQb = clone $qb;
-        $rootId = 'id'; // Default root id field
         /** @var class-string<object> $entityClass */
         $classMetadata = $this->entityManager->getClassMetadata($entityClass);
         $identifier = $classMetadata->getIdentifierFieldNames();
-        if (count($identifier) > 0) {
-            $rootId = $identifier[0];
-        }
+        $rootId = count($identifier) > 0 ? $identifier[0] : 'id';
 
-        $totalFiltered = (int) $countQb->select('count('.$alias.'.'.$rootId.')')->getQuery()->getSingleScalarResult();
-        $total = (int) $repository->createQueryBuilder($alias)->select('count('.$alias.'.'.$rootId.')')->getQuery()->getSingleScalarResult();
+        $totalFiltered = (int) $countQb
+            ->select('count('.$alias.'.'.$rootId.')')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        $total = (int) $repository
+            ->createQueryBuilder($alias)
+            ->select('count('.$alias.'.'.$rootId.')')
+            ->getQuery()
+            ->getSingleScalarResult();
 
         // Sorting
-        foreach ($result['sorting'] as $key => $sort) {
-            if (is_string($key) && is_string($sort)) {
-                $qb->addOrderBy($alias.'.'.$key, $sort);
-            }
+        foreach ($sorting as $key => $sort) {
+            $qb->addOrderBy($alias.'.'.$key, $sort);
         }
 
         // Pagination
-        $maxPage = (int) ceil($totalFiltered / $result['perpage']);
-        if ($maxPage < 1) {
-            $maxPage = 1;
-        }
-        $result['page'] = (int) max(1, min($result['page'], $maxPage));
+        $maxPage = max(1, (int) ceil($totalFiltered / $perpage));
+        $page = (int) max(1, min($page, $maxPage));
 
-        $qb->setFirstResult(($result['page'] - 1) * $result['perpage'])
-            ->setMaxResults($result['perpage']);
+        $qb->setFirstResult(($page - 1) * $perpage)
+            ->setMaxResults($perpage);
 
+        /** @var list<object> $entities */
         $entities = $qb->getQuery()->getResult();
-        if (!is_iterable($entities)) {
-            $entities = [];
-        }
 
-        $result['data'] = [];
+        $data = [];
         foreach ($entities as $entity) {
-            if (!is_object($entity)) {
-                continue;
-            }
             $row = [];
             foreach ($fields as $field) {
                 if (!$field->isRenderInTable()) {
                     continue;
                 }
-                $row[$field->getIdentifier()] = $field->render($entity);
+                $row[$field->getIdentifier()] = $field->renderDatatable($entity);
             }
-            $result['data'][] = ['data' => $row, 'config' => [], 'class' => '', 'data_class' => []];
+            $data[] = ['data' => $row, 'config' => [], 'class' => '', 'data_class' => []];
         }
 
-        $result['count'] = [
-            'total' => $total,
-            'filtered' => $totalFiltered,
-            'start' => 1 + ($result['page'] - 1) * $result['perpage'],
-            'end' => (int) min($totalFiltered, $result['page'] * $result['perpage']),
-            'perpage' => $result['perpage'],
-            'page' => $result['page'],
-        ];
-
-        return new JsonResponse($result);
+        return new JsonResponse([
+            'head' => ['columns' => $headColumns],
+            'sorting' => $sorting,
+            'search' => ['value' => $search],
+            'page' => $page,
+            'perpage' => $perpage,
+            'searchisnew' => $searchIsNew,
+            'search_fields' => $searchFields,
+            'data' => $data,
+            'count' => [
+                'total' => $total,
+                'filtered' => $totalFiltered,
+                'start' => $totalFiltered > 0 ? 1 + ($page - 1) * $perpage : 0,
+                'end' => (int) min($totalFiltered, $page * $perpage),
+                'perpage' => $perpage,
+                'page' => $page,
+            ],
+        ]);
     }
 }

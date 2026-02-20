@@ -1,6 +1,9 @@
+{% set field_id = options.override_id|default(field.getIdentifier()) %}
+{% set field_name = options.override_identifier|default(field.getIdentifier()) %}
 <div class="form-group mb-3">
-    <label class="form-label" for="{{ field.identifier }}">{{ field.name|vistrans([], options.translation_domain|default('datatable')) }}:</label>
-    <input type="{{ field.type }}" name="{{ field.identifier }}" id="{{ field.identifier }}" class="form-control" value="{{ field.value }}"
+    <label class="form-label" for="{{ field_id }}">{{ field.getName()|vistrans([], options.translation_domain|default('datatable')) }}:</label>
+    <input type="{{ field.getValueHandler().getType() }}" name="{{ field_name }}" id="{{ field_id }}" class="form-control" value="{{ field.getValueForm() }}"
+    {% if field.isRequired() and (required|default(true)) %}required{% endif %}
     />
     <span class="invalid-feedback"></span>
 </div>

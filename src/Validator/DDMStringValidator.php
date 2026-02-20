@@ -6,9 +6,13 @@ namespace JBSNewMedia\DDMBundle\Validator;
 
 class DDMStringValidator extends DDMValidator
 {
-    protected int $priority = self::DEFAULT_PRIORITY;
     protected ?int $minLength = null;
     protected ?int $maxLength = null;
+
+    public function __construct()
+    {
+        $this->alias = 'string';
+    }
 
     public function getMinLength(): ?int
     {
@@ -41,21 +45,29 @@ class DDMStringValidator extends DDMValidator
 
     public function validate(mixed $value): bool
     {
-        $valueString = is_scalar($value) || (is_object($value) && method_exists($value, '__toString')) ? (string) $value : '';
-        $length = mb_strlen($valueString);
+        $stringValue = is_scalar($value) || null === $value ? (string) $value : '';
+        $length = mb_strlen($stringValue);
 
         if (null !== $this->minLength && $length < $this->minLength) {
             if (null === $this->errorMessage) {
-                $this->setErrorMessage('error.ddm.validator.string.min_length');
+                $this->setErrorMessage('string.min_length');
             }
+            $this->errorMessageParameters = [
+                '{min_length}' => (string) $this->minLength,
+                '{current_length}' => (string) $length,
+            ];
 
             return false;
         }
 
         if (null !== $this->maxLength && $length > $this->maxLength) {
             if (null === $this->errorMessage) {
-                $this->setErrorMessage('error.ddm.validator.string.max_length');
+                $this->setErrorMessage('string.max_length');
             }
+            $this->errorMessageParameters = [
+                '{max_length}' => (string) $this->maxLength,
+                '{current_length}' => (string) $length,
+            ];
 
             return false;
         }

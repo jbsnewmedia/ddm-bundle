@@ -14,11 +14,17 @@
             "JBSNewMedia\\DDMBundle\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "JBSNewMedia\\DDMBundle\\Tests\\": "tests/"
+        }
+    },
     "require": {
         "php": ">=8.2",
-        "symfony/framework-bundle": "^7.4",
         "doctrine/orm": "^3.3",
+        "symfony/framework-bundle": "^7.4",
         "symfony/translation": "^7.4",
+        "symfony/translation-contracts": "^3.0",
         "twig/twig": "^3.21",
         "symfony/yaml": "^7.4"
     },

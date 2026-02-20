@@ -4,7 +4,8 @@
     {{ include('@DDM/datatable/header.html.twig', {
     asset: [
         'avalynx/avalynx-datatable/dist/js/avalynx-datatable.js',
-        'avalynx/avalynx-modal/dist/js/avalynx-modal.js'
+        'avalynx/avalynx-modal/dist/js/avalynx-modal.js',
+        'avalynx/avalynx-alert/dist/js/avalynx-alert.js'
     ]}) }}
 
     {{ parent() }}
@@ -14,7 +15,8 @@
     {{ include('@DDM/datatable/header.html.twig', {
     asset: [
         'avalynx/avalynx-datatable/dist/css/avalynx-datatable.css',
-        'avalynx/avalynx-modal/dist/css/avalynx-modal.css'
+        'avalynx/avalynx-modal/dist/css/avalynx-modal.css',
+        'avalynx/avalynx-alert/dist/css/avalynx-alert.css'
     ]}) }}
 
     {{ parent() }}
@@ -26,10 +28,10 @@
     {{ include('@DDM/datatable/default.html.twig', {
         ddm: ddm,
         options: ddm_options|default({
-            add_url: path('vis_demo_new'),
-            title: 'DDM Demo Tabelle',
+            add_url: ddm.route('add') ? path(ddm.route('add')) : '#',
+            title: ddm.title|default('DDM Demo Tabelle'),
             datatable_options: {
-                apiUrl: path('vis_demo_ddm_api'),
+                apiUrl: ddm.route('api') ? path(ddm.route('api')) : '#',
                 sorting: {
                     nachname: 'asc'
                 }

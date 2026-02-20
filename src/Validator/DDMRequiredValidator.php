@@ -6,13 +6,16 @@ namespace JBSNewMedia\DDMBundle\Validator;
 
 class DDMRequiredValidator extends DDMValidator
 {
-    protected int $priority = self::DEFAULT_PRIORITY;
+    public function __construct()
+    {
+        $this->alias = 'required';
+    }
 
     public function validate(mixed $value): bool
     {
         if (null === $value) {
             if (null === $this->errorMessage) {
-                $this->setErrorMessage('error.ddm.validator.required');
+                $this->setErrorMessage('required');
             }
 
             return false;
@@ -20,7 +23,7 @@ class DDMRequiredValidator extends DDMValidator
 
         if (is_string($value) && '' === trim($value)) {
             if (null === $this->errorMessage) {
-                $this->setErrorMessage('error.ddm.validator.required');
+                $this->setErrorMessage('required');
             }
 
             return false;
@@ -28,7 +31,7 @@ class DDMRequiredValidator extends DDMValidator
 
         if (is_array($value) && 0 === count($value)) {
             if (null === $this->errorMessage) {
-                $this->setErrorMessage('error.ddm.validator.required');
+                $this->setErrorMessage('required');
             }
 
             return false;

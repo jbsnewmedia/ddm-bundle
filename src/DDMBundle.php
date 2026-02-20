@@ -16,11 +16,7 @@ class DDMBundle extends AbstractBundle
             $this->extension = new DDMExtension();
         }
 
-        if (false === $this->extension) {
-            return null;
-        }
-
-        return $this->extension;
+        return $this->extension instanceof ExtensionInterface ? $this->extension : null;
     }
 
     public function getPath(): string
