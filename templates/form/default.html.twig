@@ -15,7 +15,6 @@
                 }
             },
             onError: (response) => {
-                console.log('Form submission failed:', response);
                 if (window.parent) {
                     window.parent.postMessage({ type: 'form-error', response: response }, '*');
                 }
