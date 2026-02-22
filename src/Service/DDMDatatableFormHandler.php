@@ -125,6 +125,7 @@ class DDMDatatableFormHandler
             $entityClass = $ddm->getEntityClass();
             $entity = new $entityClass();
             $isNew = true;
+            $ddm->setEntity($entity);
         }
 
         /** @var array<string, mixed> $requestData */
