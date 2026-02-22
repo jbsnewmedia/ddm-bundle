@@ -41,6 +41,8 @@ class DDMDatatableFormHandler
         string $template = '',
         array $options = [],
     ): Response {
+        $ddm->setEntity($entity);
+
         if ('' === $template) {
             $template = $ddm->getFormTemplate() ?? '@DDM/vis/form.html.twig';
         }
