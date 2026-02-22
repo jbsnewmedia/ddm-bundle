@@ -133,7 +133,10 @@ class DDMDatatableFormHandler
                 continue;
             }
             $value = $requestData[$field->getIdentifier()] ?? null;
-            $this->setEntityValue($entity, $field->getIdentifier(), $field->finalizeValue($value));
+            $finalValue = $field->finalizeValue($value);
+            if (null !== $finalValue) {
+                $this->setEntityValue($entity, $field->getIdentifier(), $finalValue);
+            }
         }
 
         if ($isNew) {
