@@ -34,6 +34,9 @@ abstract class DDMField implements DDMFieldInterface
     protected bool $renderInTable = true;
     protected bool $renderSearch = true;
     protected string $template = '@DDM/fields/text.html.twig';
+    protected string $requiredMarker = '*';
+    protected string $separator = ':';
+    protected int $inputs = 1;
     /** @var DDMValidatorInterface[] */
     protected array $validators = [];
     /** @var array<int, array{message: string, parameters: array<string, string>, domain: string}> */
@@ -389,5 +392,41 @@ abstract class DDMField implements DDMFieldInterface
         $qb->setParameter($paramName, '%'.$search.'%');
 
         return $qb->expr()->like($alias.'.'.$this->getIdentifier(), ':'.$paramName);
+    }
+
+    public function getRequiredMarker(): string
+    {
+        return $this->requiredMarker;
+    }
+
+    public function setRequiredMarker(string $requiredMarker): static
+    {
+        $this->requiredMarker = $requiredMarker;
+
+        return $this;
+    }
+
+    public function getSeparator(): string
+    {
+        return $this->separator;
+    }
+
+    public function setSeparator(string $separator): static
+    {
+        $this->separator = $separator;
+
+        return $this;
+    }
+
+    public function getInputs(): int
+    {
+        return $this->inputs;
+    }
+
+    public function setInputs(int $inputs): static
+    {
+        $this->inputs = $inputs;
+
+        return $this;
     }
 }

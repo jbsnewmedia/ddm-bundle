@@ -101,6 +101,18 @@ interface DDMFieldInterface
 
     public function getSearchExpression(QueryBuilder $qb, string $alias, string $search): ?object;
 
+    public function getRequiredMarker(): string;
+
+    public function setRequiredMarker(string $requiredMarker): static;
+
+    public function getSeparator(): string;
+
+    public function setSeparator(string $separator): static;
+
+    public function getInputs(): int;
+
+    public function setInputs(int $inputs): static;
+
     /** @return DDMFieldInterface[] */
     public function getSubFields(): array;
 

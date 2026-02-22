@@ -29,12 +29,31 @@ class DDMRequiredValidator extends DDMValidator
             return false;
         }
 
-        if (is_array($value) && 0 === count($value)) {
-            if (null === $this->errorMessage) {
-                $this->setErrorMessage('required');
+        if (is_array($value)) {
+            if (0 === count($value)) {
+                if (null === $this->errorMessage) {
+                    $this->setErrorMessage('required');
+                }
+
+                return false;
             }
 
-            return false;
+            // Check if all array elements are empty strings
+            $allEmpty = true;
+            foreach ($value as $val) {
+                if (null !== $val && (!is_string($val) || '' !== trim($val))) {
+                    $allEmpty = false;
+                    break;
+                }
+            }
+
+            if ($allEmpty) {
+                if (null === $this->errorMessage) {
+                    $this->setErrorMessage('required');
+                }
+
+                return false;
+            }
         }
 
         return true;
