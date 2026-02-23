@@ -28,10 +28,10 @@
     {{ include('@DDM/form/default.html.twig', {
         ddm: ddm,
         fields: fields,
-        options: options|default({})|merge({
-            title: title|default(ddm.title|default('DDM Demo Formular')),
+        options: options|default({})|merge(options.form_options|default({}))|merge({
+            title: title|default(ddm.title|default('ddm.title'|vistrans([], 'datatable'))),
             action: options.form_options.apiUrl|default(form_api_url),
-            submitLabel: options.form_options.submitLabel|default('formular.demo.submit'|vistrans([], 'vis_demo'))
+            submitLabel: options.form_options.submitLabel|default('ddm.modalSaveLabel'|vistrans([], 'datatable'))
         })
     }) }}
 {% endblock %}

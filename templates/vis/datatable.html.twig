@@ -29,7 +29,7 @@
         ddm: ddm,
         options: ddm_options|default({
             add_url: ddm.route('add') ? path(ddm.route('add')) : '#',
-            title: ddm.title|default('DDM Demo Tabelle'),
+            title: ddm.title|default('ddm.title'|vistrans([], 'datatable')),
             datatable_options: {
                 apiUrl: ddm.route('api') ? path(ddm.route('api')) : '#',
                 sorting: {
@@ -37,7 +37,7 @@
                 }
             },
             datatable_language: {
-                searchLabel: 'ddm.demo.search'|vistrans([], 'vis_demo')
+                searchLabel: 'ddm.searchLabel'|vistrans([], 'datatable')
             }
         })
     }) }}
