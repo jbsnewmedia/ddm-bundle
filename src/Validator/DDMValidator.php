@@ -15,6 +15,7 @@ abstract class DDMValidator implements DDMValidatorInterface
     /** @var array<string, string> */
     protected array $errorMessageParameters = [];
     protected ?string $alias = null;
+    protected bool $caseSensitive = false;
     protected int $priority = self::DEFAULT_PRIORITY;
     protected ?DDMField $field = null;
 
@@ -54,6 +55,18 @@ abstract class DDMValidator implements DDMValidatorInterface
     public function setAlias(?string $alias): static
     {
         $this->alias = $alias;
+
+        return $this;
+    }
+
+    public function isCaseSensitive(): bool
+    {
+        return $this->caseSensitive;
+    }
+
+    public function setCaseSensitive(bool $caseSensitive): static
+    {
+        $this->caseSensitive = $caseSensitive;
 
         return $this;
     }

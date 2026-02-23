@@ -33,6 +33,7 @@ abstract class DDMField implements DDMFieldInterface
     protected bool $renderInForm = true;
     protected bool $renderInTable = true;
     protected bool $renderSearch = true;
+    protected bool $caseSensitiveSearch = false;
     protected string $template = '@DDM/fields/text.html.twig';
     protected string $requiredMarker = '*';
     protected string $separator = ':';
@@ -242,6 +243,18 @@ abstract class DDMField implements DDMFieldInterface
         return $this;
     }
 
+    public function isCaseSensitiveSearch(): bool
+    {
+        return $this->caseSensitiveSearch;
+    }
+
+    public function setCaseSensitiveSearch(bool $caseSensitiveSearch): static
+    {
+        $this->caseSensitiveSearch = $caseSensitiveSearch;
+
+        return $this;
+    }
+
     public function getTemplate(): string
     {
         return $this->template;
@@ -389,9 +402,16 @@ abstract class DDMField implements DDMFieldInterface
         }
 
         $paramName = 'search_'.str_replace('.', '_', $this->getIdentifier()).'_'.(++self::$paramCounter);
-        $qb->setParameter($paramName, '%'.$search.'%');
 
-        return $qb->expr()->like($alias.'.'.$this->getIdentifier(), ':'.$paramName);
+        if ($this->isCaseSensitiveSearch()) {
+            $qb->setParameter($paramName, '%'.$search.'%');
+
+            return $qb->expr()->like($alias.'.'.$this->getIdentifier(), ':'.$paramName);
+        }
+
+        $qb->setParameter($paramName, '%'.strtolower($search).'%');
+
+        return $qb->expr()->like('LOWER('.$alias.'.'.$this->getIdentifier().')', ':'.$paramName);
     }
 
     public function getRequiredMarker(): string

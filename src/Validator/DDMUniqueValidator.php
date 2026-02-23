@@ -41,9 +41,15 @@ class DDMUniqueValidator extends DDMValidator
 
         $repository = $entityManager->getRepository($entityClass);
         $qb = $repository->createQueryBuilder('e')
-            ->select('count(e)')
-            ->where('e.'.$fieldIdentifier.' = :value')
-            ->setParameter('value', $value);
+            ->select('count(e)');
+
+        if ($this->isCaseSensitive()) {
+            $qb->where('e.'.$fieldIdentifier.' = :value')
+                ->setParameter('value', $value);
+        } else {
+            $qb->where('LOWER(e.'.$fieldIdentifier.') = LOWER(:value)')
+                ->setParameter('value', $value);
+        }
 
         if (null !== $entityId) {
             $qb->andWhere('e.id != :id')
