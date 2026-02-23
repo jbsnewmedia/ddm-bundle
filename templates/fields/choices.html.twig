@@ -4,9 +4,9 @@
     <label class="form-label">{{ field.getName()|vistrans([], options.translation_domain|default('datatable')) }}:</label>
     <div class="d-flex flex-column gap-1">
         {% set selected = field.getValueForm() is iterable ? field.getValueForm() : [] %}
-        {% for key, label in field.availableRoles %}
+        {% for key, label in field.availableChoices %}
             <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="{{ field_id }}_{{ loop.index }}" name="{{ field_name }}[]" value="{{ key }}" {% if key in selected %}checked{% endif %} {% if key == 'ROLE_USER' and not options.override_identifier|default(false) %}disabled{% endif %}>
+                <input class="form-check-input" type="checkbox" id="{{ field_id }}_{{ loop.index }}" name="{{ field_name }}[]" value="{{ key }}" {% if key in selected %}checked{% endif %} {% if key in options.disabled_choices|default([]) %}disabled{% endif %}>
                 <label class="form-check-label" for="{{ field_id }}_{{ loop.index }}">{{ label }}</label>
             </div>
         {% endfor %}

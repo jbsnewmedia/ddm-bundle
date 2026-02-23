@@ -1,0 +1,12 @@
+{% set field_id = options.override_id|default(field.getIdentifier()) %}
+{% set field_name = options.override_identifier|default(field.getIdentifier()) %}
+{% set is_required = field.isRequired() and (required|default(true)) %}
+<div class="form-group mb-3">
+    <label class="form-label" for="{{ field_id }}">{{ field.getName()|vistrans([], options.translation_domain|default('datatable')) }}{% if is_required %}{{ field.getRequiredMarker() }}{% endif %}{{ field.getSeparator() }}</label>
+    <select name="{{ field_name }}" id="{{ field_id }}" class="form-select" {% if is_required %}required{% endif %}>
+        {% for value, label in field.getAvailableChoices() %}
+            <option value="{{ value }}" {% if field.getValueForm() == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+    <span class="invalid-feedback"></span>
+</div>
