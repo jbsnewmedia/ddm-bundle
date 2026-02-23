@@ -1,6 +1,7 @@
 {% set field_id = options.override_id|default(field.getIdentifier()) %}
 {% set field_name = options.override_identifier|default(field.getIdentifier()) %}
-{% set is_required = field.isRequired() and (required|default(true)) %}
+{% set is_search = options.is_search|default(false) %}
+{% set is_required = (not is_search) and field.isRequired() and (required is not defined or required) %}
 <div class="form-group mb-3">
     <label class="form-label" for="{{ field_id }}">{{ field.getName()|vistrans([], options.translation_domain|default('datatable')) }}{% if is_required %}{{ field.getRequiredMarker() }}{% endif %}{{ field.getSeparator() }}</label>
     <input type="{{ field.getValueHandler().getType() }}" name="{{ field_name }}" id="{{ field_id }}" class="form-control" value="{{ field.getValueForm() }}"

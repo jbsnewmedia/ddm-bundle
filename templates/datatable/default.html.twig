@@ -35,7 +35,7 @@
         <div>{{ datatable_title }}</div>
         <div class="d-flex gap-2">
             {% if options.add_url|default(false) %}
-                <button class="btn btn-sm btn-success btn-add-new-user" data-url="{{ options.add_url }}">
+                <button class="btn btn-sm btn-success btn-ddm-add btn-add-new-user" data-url="{{ options.add_url }}">
                     <i class="fas fa-plus"></i> {{ options.add_label|default('ddm.modalAddTitle'|vistrans([], 'datatable')) }}
                 </button>
             {% endif %}
@@ -193,7 +193,7 @@
         });
 
         document.addEventListener('click', function(e) {
-            const btnAddNew = e.target.closest('.btn-add-new-user');
+            const btnAddNew = e.target.closest('.btn-ddm-add') || e.target.closest('.btn-add-new-user');
             if (btnAddNew) {
                 const formUrl = btnAddNew.dataset.url;
 
@@ -278,7 +278,7 @@
                 modal.open();
             }
 
-            const btnEdit = e.target.closest('.btn-edit-user');
+            const btnEdit = e.target.closest('.btn-ddm-edit') || e.target.closest('.btn-edit-user');
             if (btnEdit) {
                 const userId = btnEdit.dataset.id;
                 const formUrl = btnEdit.dataset.url;
@@ -312,7 +312,7 @@
                 modal.open();
             }
 
-            const btnDelete = e.target.closest('.btn-delete-user');
+            const btnDelete = e.target.closest('.btn-ddm-delete') || e.target.closest('.btn-delete-user');
             if (btnDelete) {
                 const userId = btnDelete.dataset.id;
                 const deleteUrl = btnDelete.dataset.url;
