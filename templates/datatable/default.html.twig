@@ -1,9 +1,12 @@
 {% set datatable_title = options.title|default('ddm.title'|vistrans([], 'datatable')) %}
+
 {% set datatable_options = {
     apiUrl: '',
     perPage: 10,
     search: "",
-    sorting: {}
+    sorting: {},
+    breakpoint: "lg",
+    className: 'avalynx-table avalynx-table-lg table table-striped table-bordered table-responsive align-middle'
 }|merge(options.datatable_options|default({})) %}
 
 {% set datatable_language = {
