@@ -373,12 +373,12 @@
                                                 }
                                                 modal.close();
                                             } else {
-                                                alert(languageSource.errorDelete.replace('{error}', (data.message || languageSource.errorDeleteUnknown)));
+                                                new AvalynxAlert(languageSource.errorDelete.replace('{error}', (data.message || languageSource.errorDeleteUnknown)), 'danger', { duration: 5000, position: 'bottom-right' });
                                             }
                                         })
                                         .catch(error => {
                                             console.error('Error:', error);
-                                            alert(languageSource.errorDelete.replace('{error}', languageSource.errorDeleteUnknown));
+                                            new AvalynxAlert(languageSource.errorDelete.replace('{error}', languageSource.errorDeleteUnknown), 'danger', { duration: 5000, position: 'bottom-right' });
                                         });
                                 } else {
                                     console.log(languageSource.confirmDeleteSimulation.replace('{id}', userId));

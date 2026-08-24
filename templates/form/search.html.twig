@@ -15,7 +15,7 @@
     {{ include('@DDM/form/header.html.twig', {
         asset: [
             'twbs/bootstrap/dist/css/bootstrap.min.css'
-        ]}) }}
+        ]|merge(vis.theme != 'vis' ? ['avalynx/avalynx-admin/dist/css/themes/avalynx-admin-' ~ vis.theme ~ '.vars.css'] : [])}) }}
 
     {{ parent() }}
 {% endblock %}

@@ -1,6 +1,6 @@
 {% set field_id = options.override_id|default(field.getIdentifier()) %}
 {% set field_name = options.override_identifier|default(field.getIdentifier()) %}
-<div class="form-group mb-3">
+<div class="mb-3">
     <label class="form-label">{{ field.getName()|vistrans([], options.translation_domain|default('datatable')) }}:</label>
     <div class="d-flex flex-column gap-1">
         {% set selected = field.getValueForm() is iterable ? field.getValueForm() : [] %}
