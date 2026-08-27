@@ -154,6 +154,8 @@ abstract class DDMField implements DDMFieldInterface
         $rawResult = $this->getEntityValue($entity, $this->identifier);
         if (null !== $rawResult) {
             $this->getValueHandler()->setValue($this->prepareValue($rawResult));
+        } else {
+            $this->getValueHandler()->setValue(null);
         }
 
         return (string) $this->getValueHandler();
