@@ -19,8 +19,8 @@ class DDMPasswordRequiredValidator extends DDMValidator
         $first = '';
         $second = '';
         if (is_array($value)) {
-            $first = trim((string) ($value[0] ?? ''));
-            $second = trim((string) ($value[1] ?? ''));
+            $first = array_key_exists(0, $value) && is_string($value[0]) ? trim($value[0]) : '';
+            $second = array_key_exists(1, $value) && is_string($value[1]) ? trim($value[1]) : '';
         } elseif (is_string($value)) {
             $first = trim($value);
         }
@@ -33,6 +33,7 @@ class DDMPasswordRequiredValidator extends DDMValidator
 
         if ($bothEmpty) {
             $this->setErrorMessage('required');
+
             return false;
         }
 

@@ -53,6 +53,9 @@ class DDMDatatableEngine
                 $column['raw'] = true;
                 $column['class'] = 'avalynx-datatable-options';
             }
+            if (null !== $field->getFixed()) {
+                $column['fixed'] = $field->getFixed();
+            }
             $headColumns[] = $column;
         }
 
@@ -170,7 +173,7 @@ class DDMDatatableEngine
             'search_fields' => $searchFields,
             'data' => $data,
             'count' => [
-                'total' => $total,
+                'all' => $total,
                 'filtered' => $totalFiltered,
                 'start' => $totalFiltered > 0 ? 1 + ($page - 1) * $perpage : 0,
                 'end' => (int) min($totalFiltered, $page * $perpage),

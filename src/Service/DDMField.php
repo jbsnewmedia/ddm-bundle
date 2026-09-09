@@ -23,6 +23,16 @@ abstract class DDMField implements DDMFieldInterface
      */
     public const IDENTIFIER_OPTIONS = 'options';
 
+    /**
+     * Pins a datatable column to the inline start edge (left in LTR, right in RTL).
+     */
+    public const FIXED_START = 'start';
+
+    /**
+     * Pins a datatable column to the inline end edge (right in LTR, left in RTL).
+     */
+    public const FIXED_END = 'end';
+
     protected string $identifier = '';
     protected string $name = '';
     protected ?DDMValueInterface $valueHandler = null;
@@ -46,6 +56,7 @@ abstract class DDMField implements DDMFieldInterface
     protected array $subFields = [];
     /** @var array<string, string> */
     protected array $routes = [];
+    protected ?string $fixed = null;
     protected ?DDM $ddm = null;
 
     /** Static counter for unique query parameter names (replaces uniqid()). */
@@ -98,9 +109,7 @@ abstract class DDMField implements DDMFieldInterface
 
     public function getValueHandler(): DDMValueInterface
     {
-        if (null === $this->valueHandler) {
-            $this->valueHandler = new DDMStringValue();
-        }
+        $this->valueHandler ??= new DDMStringValue();
 
         return $this->valueHandler;
     }
@@ -359,6 +368,19 @@ abstract class DDMField implements DDMFieldInterface
         return $this->routes[$name] ?? null;
     }
 
+    public function getFixed(): ?string
+    {
+        return $this->fixed;
+    }
+
+    public function setFixed(?string $fixed): static
+    {
+        $normalized = null === $fixed ? null : strtolower(trim($fixed));
+        $this->fixed = self::FIXED_START === $normalized || self::FIXED_END === $normalized ? $normalized : null;
+
+        return $this;
+    }
+
     public function renderDatatable(object $entity): string
     {
         return $this->getValueDatatable($entity);
@@ -397,7 +419,7 @@ abstract class DDMField implements DDMFieldInterface
         return $this->ddm;
     }
 
-    public function getSearchExpression(QueryBuilder $qb, string $alias, string $search): ?object
+    public function getSearchExpression(QueryBuilder $qb, string $alias, string $search): ?\Stringable
     {
         if (!$this->isLivesearch() || self::IDENTIFIER_OPTIONS === $this->getIdentifier()) {
             return null;

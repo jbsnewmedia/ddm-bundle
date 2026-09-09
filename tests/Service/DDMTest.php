@@ -51,7 +51,8 @@ final class DDMTest extends TestCase
 
     public function testLoadFieldsWithContextMatch(): void
     {
-        $field = new #[DDMFieldAttribute(identifier: 'my_context')] class extends DDMField {};
+        // Context matching compares the attribute's entity against the DDM context
+        $field = new #[DDMFieldAttribute(entity: 'my_context', identifier: 'my_context')] class extends DDMField {};
         $field->setIdentifier('field1');
 
         $entityManager = $this->createMock(EntityManagerInterface::class);

@@ -12,9 +12,7 @@ class DDMBundle extends AbstractBundle
 {
     public function getContainerExtension(): ?ExtensionInterface
     {
-        if (null === $this->extension) {
-            $this->extension = new DDMExtension();
-        }
+        $this->extension ??= new DDMExtension();
 
         return $this->extension instanceof ExtensionInterface ? $this->extension : null;
     }

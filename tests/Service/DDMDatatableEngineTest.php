@@ -203,6 +203,58 @@ final class DDMDatatableEngineTest extends TestCase
         $this->assertSame('avalynx-datatable-options', $data['head']['columns'][0]['class']);
     }
 
+    public function testHandleRequestWithFixedField(): void
+    {
+        $translator = $this->createMock(TranslatorInterface::class);
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $repository = $this->createMock(EntityRepository::class);
+        $qb = $this->createMock(QueryBuilder::class);
+        $query = $this->createMock(Query::class);
+        $classMetadata = $this->createMock(ClassMetadata::class);
+
+        $numberField = new class extends DDMField {};
+        $numberField->setIdentifier('number');
+        $numberField->setName('Number');
+        $numberField->setFixed(DDMField::FIXED_START);
+
+        $optionsField = new class extends DDMField {};
+        $optionsField->setIdentifier(DDMField::IDENTIFIER_OPTIONS);
+        $optionsField->setName('Options');
+        $optionsField->setLivesearch(false);
+        $optionsField->setFixed(DDMField::FIXED_END);
+
+        $ddm = new DDM(\DateTimeImmutable::class, 'context', [], $entityManager);
+        $ddm->addField($numberField);
+        $ddm->addField($optionsField);
+
+        $entityManager->method('getRepository')->willReturn($repository);
+        $repository->method('createQueryBuilder')->willReturn($qb);
+
+        $qb->method('getRootAliases')->willReturn(['p']);
+        $qb->method('expr')->willReturn(new \Doctrine\ORM\Query\Expr());
+        $qb->method('select')->willReturn($qb);
+        $qb->method('setFirstResult')->willReturn($qb);
+        $qb->method('setMaxResults')->willReturn($qb);
+        $qb->method('getQuery')->willReturn($query);
+
+        $query->method('getSingleScalarResult')->willReturn(0);
+        $query->method('getResult')->willReturn([]);
+
+        $entityManager->method('getClassMetadata')->willReturn($classMetadata);
+        $classMetadata->method('getIdentifierFieldNames')->willReturn(['id']);
+
+        $engine = new DDMDatatableEngine($translator, $entityManager);
+        $request = new Request();
+
+        $response = $engine->handleRequest($request, $ddm);
+
+        $this->assertSame(200, $response->getStatusCode());
+        $data = json_decode((string)$response->getContent(), true);
+        $this->assertSame('start', $data['head']['columns'][0]['fixed']);
+        $this->assertSame('end', $data['head']['columns'][1]['fixed']);
+        $this->assertTrue($data['head']['columns'][1]['raw']);
+    }
+
     public function testHandleRequestWithNonIterableResult(): void
     {
         $translator = $this->createMock(TranslatorInterface::class);
@@ -570,7 +622,7 @@ final class DDMDatatableEngineTest extends TestCase
 
         // This field has livesearch true, but will return null search expression
         $field = new class extends DDMField {
-            public function getSearchExpression($qb, $alias, $search): ?object { return null; }
+            public function getSearchExpression($qb, $alias, $search): ?\Stringable { return null; }
         };
         $field->setIdentifier('special');
         $field->setRenderInTable(true);

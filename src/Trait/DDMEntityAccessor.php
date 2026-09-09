@@ -22,6 +22,11 @@ trait DDMEntityAccessor
             return $entity->$method();
         }
 
+        $method = 'is'.ucfirst($identifier);
+        if (method_exists($entity, $method)) {
+            return $entity->$method();
+        }
+
         return null;
     }
 

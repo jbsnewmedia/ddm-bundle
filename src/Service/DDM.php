@@ -83,11 +83,15 @@ class DDM
                 $entityMatches = $ddmFieldAttribute->entity === $this->entityClass
                     || (null !== $ddmFieldAttribute->entity
                         && strtolower($ddmFieldAttribute->entity) === $entityShortName);
-                $contextMatches = $ddmFieldAttribute->identifier === $this->context
-                    || $ddmFieldAttribute->entity === $this->context;
+                $contextMatches = $ddmFieldAttribute->entity === $this->context;
 
                 if ($entityMatches || $contextMatches) {
                     $field->setOrder($ddmFieldAttribute->order);
+
+                    if ('' === $field->getIdentifier() && null !== $ddmFieldAttribute->identifier) {
+                        $field->setIdentifier($ddmFieldAttribute->identifier);
+                    }
+
                     $collectedFields[] = $field;
                     break;
                 }

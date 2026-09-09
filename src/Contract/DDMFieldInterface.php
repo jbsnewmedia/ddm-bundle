@@ -82,6 +82,10 @@ interface DDMFieldInterface
     /** @param array<string, string> $routes */
     public function setRoutes(array $routes): static;
 
+    public function getFixed(): ?string;
+
+    public function setFixed(?string $fixed): static;
+
     public function getRoute(string $name): ?string;
 
     public function renderDatatable(object $entity): string;
@@ -99,7 +103,11 @@ interface DDMFieldInterface
 
     public function getDdm(): ?DDM;
 
-    public function getSearchExpression(QueryBuilder $qb, string $alias, string $search): ?object;
+    /**
+     * Returns the search expression for the given term. All Doctrine expression
+     * objects returned by the expression builder are stringable.
+     */
+    public function getSearchExpression(QueryBuilder $qb, string $alias, string $search): ?\Stringable;
 
     public function getRequiredMarker(): string;
 

@@ -36,6 +36,27 @@ final class DDMFieldTest extends TestCase
         $this->assertSame('/x', $this->field->getRoute('show'));
     }
 
+    public function testFixed(): void
+    {
+        $this->assertNull($this->field->getFixed());
+
+        $this->field->setFixed(DDMField::FIXED_START);
+        $this->assertSame('start', $this->field->getFixed());
+
+        $this->field->setFixed(DDMField::FIXED_END);
+        $this->assertSame('end', $this->field->getFixed());
+
+        $this->field->setFixed(' START ');
+        $this->assertSame('start', $this->field->getFixed());
+
+        $this->field->setFixed('middle');
+        $this->assertNull($this->field->getFixed());
+
+        $this->field->setFixed(DDMField::FIXED_START);
+        $this->field->setFixed(null);
+        $this->assertNull($this->field->getFixed());
+    }
+
     public function testValue(): void
     {
         $this->field->setValue('test_value');
@@ -167,8 +188,9 @@ final class DDMFieldTest extends TestCase
         $this->field->setIdentifier('test');
         $this->assertSame('rendered_value', $this->field->renderDatatable($entity));
 
+        // Entity without a getter resets the value handler to an empty string
         $entity2 = new class {};
-        $this->assertSame('rendered_value', $this->field->renderDatatable($entity2));
+        $this->assertSame('', $this->field->renderDatatable($entity2));
     }
 
     public function testInit(): void
